@@ -1,13 +1,97 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+
 # Rider ignored files
 /modules.xml
 /.idea.PKS.iml
 /contentModel.xml
 /projectSettingsUpdater.xml
+
 # Editor-based HTTP Client requests
 /httpRequests/
+
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+binaries/
+bin/
+obj/
+out/
+[Oo]ut/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Rider
+.idea/
+*.sln.iml
+
+# Rider and ReSharper
+*.DotSettings.user
+*.DotSettings
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build.props
+!**/packages/build.rsp
+
+# Local History for Visual Studio
+.localhistory/
+
+# User-specific files
+*.dbmdl
+*.dbproj.schemaview
+*.jfm
+*.sln.ide
+
+# VS Code settings
+.vscode/
+.vscode/*
+*.code-workspace
+
+# Other files
+*.log
+*.tlog
+*.vsix
+*.pdb
+*.cache
+*.ilk
+*.iobj
+*.ipch/
+*.opensdf
+*.sdf
+*.suo
+*.unsuccessfulbuild
+
+# Backup files
+*~
+*.bak
+*.tmp
+*.temp
+
+# Mac-specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows-specific files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
