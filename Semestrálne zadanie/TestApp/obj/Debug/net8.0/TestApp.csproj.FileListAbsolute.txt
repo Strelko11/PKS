@@ -1,0 +1,26 @@
+/Users/macbook/Desktop/FIIT/PKS/TestApp/bin/Debug/net8.0/TestApp
+/Users/macbook/Desktop/FIIT/PKS/TestApp/bin/Debug/net8.0/TestApp.deps.json
+/Users/macbook/Desktop/FIIT/PKS/TestApp/bin/Debug/net8.0/TestApp.runtimeconfig.json
+/Users/macbook/Desktop/FIIT/PKS/TestApp/bin/Debug/net8.0/TestApp.dll
+/Users/macbook/Desktop/FIIT/PKS/TestApp/bin/Debug/net8.0/TestApp.pdb
+/Users/macbook/Desktop/FIIT/PKS/TestApp/obj/Debug/net8.0/TestApp.GeneratedMSBuildEditorConfig.editorconfig
+/Users/macbook/Desktop/FIIT/PKS/TestApp/obj/Debug/net8.0/TestApp.AssemblyInfoInputs.cache
+/Users/macbook/Desktop/FIIT/PKS/TestApp/obj/Debug/net8.0/TestApp.AssemblyInfo.cs
+/Users/macbook/Desktop/FIIT/PKS/TestApp/obj/Debug/net8.0/TestApp.csproj.CoreCompileInputs.cache
+/Users/macbook/Desktop/FIIT/PKS/TestApp/obj/Debug/net8.0/TestApp.sourcelink.json
+/Users/macbook/Desktop/FIIT/PKS/TestApp/obj/Debug/net8.0/TestApp.dll
+/Users/macbook/Desktop/FIIT/PKS/TestApp/obj/Debug/net8.0/refint/TestApp.dll
+/Users/macbook/Desktop/FIIT/PKS/TestApp/obj/Debug/net8.0/TestApp.pdb
+/Users/macbook/Desktop/FIIT/PKS/TestApp/obj/Debug/net8.0/TestApp.genruntimeconfig.cache
+/Users/macbook/Desktop/FIIT/PKS/TestApp/obj/Debug/net8.0/ref/TestApp.dll
+/Users/macbook/Desktop/FIIT/PKS/Semestrálne zadanie/TestApp/bin/Debug/net8.0/TestApp
+/Users/macbook/Desktop/FIIT/PKS/Semestrálne zadanie/TestApp/bin/Debug/net8.0/TestApp.dll
+/Users/macbook/Desktop/FIIT/PKS/Semestrálne zadanie/TestApp/bin/Debug/net8.0/TestApp.pdb
+/Users/macbook/Desktop/FIIT/PKS/Semestrálne zadanie/TestApp/obj/Debug/net8.0/TestApp.GeneratedMSBuildEditorConfig.editorconfig
+/Users/macbook/Desktop/FIIT/PKS/Semestrálne zadanie/TestApp/obj/Debug/net8.0/TestApp.AssemblyInfoInputs.cache
+/Users/macbook/Desktop/FIIT/PKS/Semestrálne zadanie/TestApp/obj/Debug/net8.0/TestApp.AssemblyInfo.cs
+/Users/macbook/Desktop/FIIT/PKS/Semestrálne zadanie/TestApp/obj/Debug/net8.0/TestApp.csproj.CoreCompileInputs.cache
+/Users/macbook/Desktop/FIIT/PKS/Semestrálne zadanie/TestApp/obj/Debug/net8.0/TestApp.sourcelink.json
+/Users/macbook/Desktop/FIIT/PKS/Semestrálne zadanie/TestApp/obj/Debug/net8.0/TestApp.dll
+/Users/macbook/Desktop/FIIT/PKS/Semestrálne zadanie/TestApp/obj/Debug/net8.0/refint/TestApp.dll
+/Users/macbook/Desktop/FIIT/PKS/Semestrálne zadanie/TestApp/obj/Debug/net8.0/TestApp.pdb
