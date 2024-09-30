@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/macbook/Desktop/FIIT/PKS/ConsoleApp1/ConsoleApp1.csproj",
-      "projectName": "ConsoleApp1",
-      "projectPath": "/Users/macbook/Desktop/FIIT/PKS/ConsoleApp1/ConsoleApp1.csproj",
+      "projectUniqueName": "/Users/macbook/Desktop/FIIT/PKS/TestApp/TestApp.csproj",
+      "projectName": "TestApp",
+      "projectPath": "/Users/macbook/Desktop/FIIT/PKS/TestApp/TestApp.csproj",
       "packagesPath": "/Users/macbook/.nuget/packages/",
-      "outputPath": "/Users/macbook/Desktop/FIIT/PKS/ConsoleApp1/obj/",
+      "outputPath": "/Users/macbook/Desktop/FIIT/PKS/TestApp/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/macbook/.nuget/NuGet/NuGet.Config"
