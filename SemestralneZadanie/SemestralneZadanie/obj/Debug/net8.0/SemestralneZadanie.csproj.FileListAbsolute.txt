@@ -1,0 +1,15 @@
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/bin/Debug/net8.0/SemestralneZadanie
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/bin/Debug/net8.0/SemestralneZadanie.deps.json
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/bin/Debug/net8.0/SemestralneZadanie.runtimeconfig.json
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/bin/Debug/net8.0/SemestralneZadanie.dll
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/bin/Debug/net8.0/SemestralneZadanie.pdb
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/obj/Debug/net8.0/SemestralneZadanie.GeneratedMSBuildEditorConfig.editorconfig
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/obj/Debug/net8.0/SemestralneZadanie.AssemblyInfoInputs.cache
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/obj/Debug/net8.0/SemestralneZadanie.AssemblyInfo.cs
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/obj/Debug/net8.0/SemestralneZadanie.csproj.CoreCompileInputs.cache
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/obj/Debug/net8.0/SemestralneZadanie.sourcelink.json
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/obj/Debug/net8.0/SemestralneZadanie.dll
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/obj/Debug/net8.0/refint/SemestralneZadanie.dll
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/obj/Debug/net8.0/SemestralneZadanie.pdb
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/obj/Debug/net8.0/SemestralneZadanie.genruntimeconfig.cache
+/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/SemestralneZadanie/obj/Debug/net8.0/ref/SemestralneZadanie.dll
