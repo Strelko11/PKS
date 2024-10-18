@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Data;
+using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -13,43 +14,62 @@ namespace Computer1
     {   
         private static Client udpClient = new Client();
         private static UDP_server udpServer = new UDP_server();
-        private static System.Timers.Timer timer;
-        private static int countDown = 10;
-        private static string send_ip = "192.168.1.3";
-        private static string receive_ip = "192.168.1.2";
-        private static int port_listen = 12345;
-        private static int port_send = 12346;
-        private static string message = "Hello World!";
+        private static string destination_ip;
+        private static string source_ip = "10.10.77.21";
+        private static int destination_port;
+        private static int source_port;
+        private static string message;
+        public static bool isRunning;
         static void Main(string[] args)
         {
-            // Start the receive thread
+            Console.WriteLine("Enter destination IP address:");
+            destination_ip = Console.ReadLine();
             
-            Thread receiveThread = new Thread(() => receive_thread(receive_ip, port_listen));
-            receiveThread.Start();
-            Thread sendThread = new Thread(() => send_thread(send_ip, port_send, message));
+            Console.WriteLine("Enter destination port:");
+            string input = Console.ReadLine();
+            destination_port = int.Parse(input);
+            
+            Console.WriteLine("Enter source port:");
+            input = Console.ReadLine();
+            source_port = int.Parse(input);
+            
+            isRunning = true;
+            
+            Thread sendThread = new Thread(() => send_thread(destination_ip, destination_port));
             sendThread.Start();
+
+            Thread receiveThread = new Thread(() => receive_thread(source_ip, source_port));
+            receiveThread.Start();
             
+            //Console.WriteLine("Press enter to exit");
+            //Console.ReadLine();
+
+            //isRunning = false;
             
-            // Start the send thread
+            sendThread.Join();
+            receiveThread.Join();
             
 
-            // Wait for threads to finish (in this case, they won't unless stopped)
-            //sendThread.Join();
-            //receiveThread.Join();
         }
 
-        public static void send_thread(string udpIP, int port_send, string message)
+        public static void send_thread(string destination_ip, int destination_port)
         {
-            while (true)
+            while (isRunning)
             {
-                udpClient.SendMessage(udpIP, port_send, message);
-                Thread.Sleep(1000); // Send message every second
+                Console.WriteLine("Enter message you want to send:");
+                message = Console.ReadLine();
+                if (message == "exit")
+                {
+                    isRunning = false;
+                    continue;
+                }
+                udpClient.SendMessage(destination_ip, destination_port, message);
             }
         }
 
-        public static void receive_thread(string udpIP, int port_listen)
+        public static void receive_thread(string source_ip, int source_port)
         {
-                udpServer.Start(udpIP, port_listen);
+                udpServer.Start(source_ip, source_port);
         }
     }
     
@@ -70,4 +90,17 @@ namespace Computer1
                 receiveThread.Start();
             }*/
 }
+// Start the receive thread
+            
+//Thread receiveThread = new Thread(() => receive_thread(receive_ip, port_listen));
+//receiveThread.Start();
+//Thread sendThread = new Thread(() => send_thread(send_ip, port_send, message));
+//sendThread.Start();
+            
+            
+// Start the send thread
+            
 
+// Wait for threads to finish (in this case, they won't unless stopped)
+//sendThread.Join();
+//receiveThread.Join();

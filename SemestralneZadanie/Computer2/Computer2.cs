@@ -14,39 +14,63 @@ namespace Computer2
         private static UDP_client udpClient = new UDP_client();
         private static UDP_server udpServer = new UDP_server();
         //private static string udpIP = "10.10.77.21"; // Change as needed
-        private static string send_ip = "192.168.1.3";
-        private static string receive_ip = "192.168.1.2";
-        private static int port_listen = 12346;
-        private static int port_send = 12345;
-        private static string message = "Hello World!";
+        private static string destination_ip;
+        private static string source_ip = "10.10.77.21";
+        private static int destination_port;
+        private static int source_port;
+        private static string message;
+        public static bool isRunning;
 
         static void Main(string[] args)
         {
-            // Start the receive thread
-            Thread receiveThread = new Thread(() => receive_thread(receive_ip, port_listen));
-            receiveThread.Start();
-
-            // Start the send thread
-            Thread sendThread = new Thread(() => send_thread(send_ip, port_send, message));
+            Console.WriteLine("Enter destination IP address:");
+            destination_ip = Console.ReadLine();
+            
+            Console.WriteLine("Enter destination port:");
+            string input = Console.ReadLine();
+            destination_port = int.Parse(input);
+            
+            Console.WriteLine("Enter source port:");
+            input = Console.ReadLine();
+            source_port = int.Parse(input);
+            
+            isRunning = true;
+            
+            Thread sendThread = new Thread(() => send_thread(destination_ip, destination_port));
             sendThread.Start();
 
-            // Wait for threads to finish (in this case, they won't unless stopped)
+            Thread receiveThread = new Thread(() => receive_thread(source_ip, source_port));
+            receiveThread.Start();
+            
+            //Console.WriteLine("Press enter to exit");
+            //Console.ReadLine();
+
+            //isRunning = false;
+            
             sendThread.Join();
             receiveThread.Join();
+            
+
         }
 
-        public static void send_thread(string udpIP, int port_send, string message)
+        public static void send_thread(string destination_ip, int destination_port)
         {
-            while (true)
+            while (isRunning)
             {
-                udpClient.send_message(udpIP, port_send, message);
-                Thread.Sleep(1000); // Send message every second
+                Console.WriteLine("Enter message you want to send:");
+                message = Console.ReadLine();
+                if (message == "exit")
+                {
+                    isRunning = false;
+                    continue;
+                }
+                udpClient.send_message(destination_ip, destination_port, message);
             }
         }
 
-        public static void receive_thread(string udpIP, int port_listen)
+        public static void receive_thread(string source_ip, int source_port)
         {
-            udpServer.Start(udpIP, port_listen);
+            udpServer.Start(source_ip, source_port);
         }
     }
 
@@ -69,4 +93,14 @@ namespace Computer2
                 receiveThread.Start();
             }*/
 }
+/*// Start the receive thread
+            Thread receiveThread = new Thread(() => receive_thread(receive_ip, port_listen));
+            receiveThread.Start();
 
+            // Start the send thread
+            Thread sendThread = new Thread(() => send_thread(send_ip, port_send, message));
+            sendThread.Start();
+
+            // Wait for threads to finish (in this case, they won't unless stopped)
+            sendThread.Join();
+            receiveThread.Join();*/

@@ -12,11 +12,11 @@ public class UDP_server
         {
             IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(udpIP), udpPort);
             sock.Bind(endPoint);
-            Console.WriteLine("Listening for connections on " + udpIP + ":" + udpPort);
+            //Console.WriteLine("Listening for connections on " + udpIP + ":" + udpPort);
                 
             byte[] buffer = new byte[1024];
 
-            while (running)
+            while (Program.isRunning)
             {
                 EndPoint senderEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 int bytesReceived = sock.ReceiveFrom(buffer, ref senderEndPoint);
