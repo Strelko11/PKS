@@ -21,6 +21,10 @@ namespace Computer2
         private static string message;
         public static bool isRunning;
         private static Header.HeaderData header = new Header.HeaderData();
+        public static bool SYN = false;
+        public static bool SYN_ACK = false;
+        public static bool ACK = false;
+
 
         static void Main(string[] args)
         {
@@ -57,56 +61,48 @@ namespace Computer2
 
         }
 
-         public static void send_thread(string destination_ip, int destination_port)
+        public static void send_thread(string destination_ip, int destination_port)
         {
             header.SetType(Header.HeaderData.SYN);
             header.SetMsg(Header.HeaderData.MSG_NONE);
-            
+
+            // Send initial SYN message
             udpClient.send_message(destination_ip, destination_port, "SYN", header);
-            if (udpClient.WaitFor_SYN_ACK(destination_port, destination_ip))
+            
+
+            // Wait for SYN-ACK
+            do
             {
-                header.SetType(Header.HeaderData.ACK);
-                header.SetMsg(Header.HeaderData.MSG_NONE);
+                Console.WriteLine("Waiting for SYN ACK");
+                Thread.Sleep(500);
+            } while (!SYN_ACK);
+
+            // Send ACK after receiving SYN-ACK
+            udpClient.send_message(destination_ip, destination_port, "ACK", header);
+            
+
+            if (ACK && SYN_ACK && SYN)
+            {
+                // Message sending loop
                 while (isRunning)
                 {
-                    Console.WriteLine("Enter message you want to send:");
+                    Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
                     message = Console.ReadLine();
                     if (message == "exit")
                     {
                         isRunning = false;
                         continue;
                     }
+
+                    // Send the actual message
                     udpClient.send_message(destination_ip, destination_port, message, header);
                 }
             }
-            else
-            {
-                Console.WriteLine("Failed to receive SYN-ACK.");
-            }
-            
-           
         }
 
         public static void receive_thread(string source_ip, int source_port)
         {
-           
-            if (udpClient.WaitFor_SYN(destination_port, destination_ip))
-            {
-                // If a SYN packet is received, send a SYN-ACK response
-                header.SetType(Header.HeaderData.SYN_ACK);
-                header.SetMsg(Header.HeaderData.MSG_NONE);
-                udpClient.send_message(destination_ip, destination_port, "SYN-ACK", header);
-        
-                Console.WriteLine("SYN-ACK sent");
-                if (udpClient.WaitFor_ACK(destination_port, destination_ip))
-                {
-                    Console.WriteLine("ACK received. Now listening for messages...");
-                    // Start listening for further messages
-                    udpServer.Start(source_ip, source_port);
-                }
-            }
-                
-                
+            udpServer.Start(source_ip, source_port);
         }
     }
 
