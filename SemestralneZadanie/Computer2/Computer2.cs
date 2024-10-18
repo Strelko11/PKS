@@ -1,61 +1,70 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Timers;
+using System.Threading.Tasks;
+
 
 namespace Computer2
 {
-    class UDP_client
-    {
-        public void send_message(string udpIP, int udpPort,string msg)
-        {
-            byte[] data = Encoding.ASCII.GetBytes(msg);
-            using(Socket sock = new Socket(AddressFamily.InterNetwork,SocketType.Dgram,ProtocolType.Udp))
-            {
-                IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(udpIP), udpPort);
-                sock.SendTo(data,endPoint);
-                Console.WriteLine("Sent message to " + udpIP + ":" + udpPort);
-            }
-        }
-        
-    }
-
-    class UDP_server
-    {
-        private bool running = true;
-
-        public void Start(string udpIP, int udpPort)
-        {
-            using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
-            {
-                IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(udpIP), udpPort);
-                sock.Bind(endPoint);
-                Console.WriteLine("Listening for connections on " + udpIP + ":" + udpPort);
-                
-                byte[] buffer = new byte[1024];
-
-                while (running)
-                {
-                    EndPoint senderEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                    int bytesReceived = sock.ReceiveFrom(buffer, ref senderEndPoint);
-                    string receivedMessage = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
-                    Console.WriteLine("Received message " + receivedMessage);
-                }
-                
-            }
-        }
-        
-    }
-
-    
     class Program
-    {   
+    {
+        private static UDP_client udpClient = new UDP_client();
+        private static UDP_server udpServer = new UDP_server();
+        private static string udpIP = "10.10.77.21"; // Change as needed
+        private static int port_listen = 12346;
+        private static int port_send = 12345;
+        private static string message = "Hello World!";
+
         static void Main(string[] args)
         {
-            string udpIP = "10.10.77.21";
-            int UdpPort = 12345;
-            UDP_server udpServer = new UDP_server();
-            udpServer.Start(udpIP, UdpPort);
+            // Start the receive thread
+            Thread receiveThread = new Thread(() => receive_thread(udpIP, port_listen));
+            receiveThread.Start();
+
+            // Start the send thread
+            Thread sendThread = new Thread(() => send_thread(udpIP, port_send, message));
+            sendThread.Start();
+
+            // Wait for threads to finish (in this case, they won't unless stopped)
+            sendThread.Join();
+            receiveThread.Join();
+        }
+
+        public static void send_thread(string udpIP, int port_send, string message)
+        {
+            while (true)
+            {
+                udpClient.send_message(udpIP, port_send, message);
+                Thread.Sleep(1000); // Send message every second
+            }
+        }
+
+        public static void receive_thread(string udpIP, int port_listen)
+        {
+            udpServer.Start(udpIP, port_listen);
         }
     }
+
+
+
+
+    /*Console.Write("Do you want to send or receive messages? (s/r)");
+            string input = Console.ReadLine();
+
+            if (input == "s")
+            {
+                Thread sendThread = new Thread(() => send_thread(udpIP, port_send, message));
+                sendThread.Start();
+                //send_thread(udpIP, port_send, message);
+            }
+
+            if (input == "r")
+            {
+                Thread receiveThread = new Thread(() => receive_thread(udpIP, port_listen));
+                receiveThread.Start();
+            }*/
 }
 
