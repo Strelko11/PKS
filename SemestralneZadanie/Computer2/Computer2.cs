@@ -13,7 +13,9 @@ namespace Computer2
     {
         private static UDP_client udpClient = new UDP_client();
         private static UDP_server udpServer = new UDP_server();
-        private static string udpIP = "10.10.77.21"; // Change as needed
+        //private static string udpIP = "10.10.77.21"; // Change as needed
+        private static string send_ip = "192.168.1.3";
+        private static string receive_ip = "192.168.1.2";
         private static int port_listen = 12346;
         private static int port_send = 12345;
         private static string message = "Hello World!";
@@ -21,11 +23,11 @@ namespace Computer2
         static void Main(string[] args)
         {
             // Start the receive thread
-            Thread receiveThread = new Thread(() => receive_thread(udpIP, port_listen));
+            Thread receiveThread = new Thread(() => receive_thread(receive_ip, port_listen));
             receiveThread.Start();
 
             // Start the send thread
-            Thread sendThread = new Thread(() => send_thread(udpIP, port_send, message));
+            Thread sendThread = new Thread(() => send_thread(send_ip, port_send, message));
             sendThread.Start();
 
             // Wait for threads to finish (in this case, they won't unless stopped)

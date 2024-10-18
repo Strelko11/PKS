@@ -15,23 +15,27 @@ namespace Computer1
         private static UDP_server udpServer = new UDP_server();
         private static System.Timers.Timer timer;
         private static int countDown = 10;
-        private static string udpIP = "10.10.77.21"; // Change as needed
+        private static string send_ip = "192.168.1.3";
+        private static string receive_ip = "192.168.1.2";
         private static int port_listen = 12345;
         private static int port_send = 12346;
         private static string message = "Hello World!";
         static void Main(string[] args)
         {
             // Start the receive thread
-            Thread receiveThread = new Thread(() => receive_thread(udpIP, port_listen));
+            
+            Thread receiveThread = new Thread(() => receive_thread(receive_ip, port_listen));
             receiveThread.Start();
-
-            // Start the send thread
-            Thread sendThread = new Thread(() => send_thread(udpIP, port_send, message));
+            Thread sendThread = new Thread(() => send_thread(send_ip, port_send, message));
             sendThread.Start();
+            
+            
+            // Start the send thread
+            
 
             // Wait for threads to finish (in this case, they won't unless stopped)
-            sendThread.Join();
-            receiveThread.Join();
+            //sendThread.Join();
+            //receiveThread.Join();
         }
 
         public static void send_thread(string udpIP, int port_send, string message)
@@ -45,7 +49,7 @@ namespace Computer1
 
         public static void receive_thread(string udpIP, int port_listen)
         {
-            udpServer.Start(udpIP, port_listen);
+                udpServer.Start(udpIP, port_listen);
         }
     }
     

@@ -1,5 +1,3 @@
-
-
 namespace Computer2;
 using System.Net;
 using System.Net.Sockets;
