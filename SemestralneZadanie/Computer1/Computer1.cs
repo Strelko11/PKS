@@ -65,40 +65,43 @@ namespace Computer1
 
         public static void send_thread(string destination_ip, int destination_port)
         {
+            // Send initial SYN message
             header.SetType(Header.HeaderData.SYN);
             header.SetMsg(Header.HeaderData.MSG_NONE);
-
-            // Send initial SYN message
             udpClient.SendMessage(destination_ip, destination_port, "SYN", header);
-            
+            Console.WriteLine("SYN packet sent. Waiting for SYN...");
 
-            // Wait for SYN-ACK
-            do
+            // Wait for SYN
+            while (!SYN)
             {
-                Console.WriteLine("Waiting for SYN ACK");
-                Thread.Sleep(500);
-            } while (!SYN_ACK);
+                Thread.Sleep(500); // Poll every 500ms
+            }
 
-            // Send ACK after receiving SYN-ACK
-            udpClient.SendMessage(destination_ip, destination_port, "ACK", header);
-            
+            // Send SYN_ACK after receiving SYN
+            header.SetType(Header.HeaderData.SYN_ACK);
+            header.SetMsg(Header.HeaderData.MSG_NONE);
+            udpClient.SendMessage(destination_ip, destination_port, "SYN_ACK", header);
+            Console.WriteLine("SYN_ACK packet sent. Waiting for ACK...");
 
-            if (ACK && SYN_ACK && SYN)
+            // Wait for ACK
+            while (!ACK)
             {
-                // Message sending loop
-                while (isRunning)
+                Thread.Sleep(500); // Poll every 500ms
+            }
+
+            // Message sending loop
+            while (isRunning)
+            {
+                Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
+                message = Console.ReadLine();
+                if (message == "exit")
                 {
-                    Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
-                    message = Console.ReadLine();
-                    if (message == "exit")
-                    {
-                        isRunning = false;
-                        continue;
-                    }
-
-                    // Send the actual message
-                    udpClient.SendMessage(destination_ip, destination_port, message, header);
+                    isRunning = false;
+                    continue;
                 }
+
+                // Send the actual message
+                udpClient.SendMessage(destination_ip, destination_port, message, header);
             }
         }
 
