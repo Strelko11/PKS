@@ -11,24 +11,40 @@ public class UDP_server
     {
         using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
         {
-            
-            
-        
             // Set the socket option to reuse the address
             sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-        
-            
-            
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(udpIP), udpPort);
-            sock.Bind(endPoint);
-            Console.WriteLine($"Listening for connections on {udpIP}:{udpPort}");
-                
+            Console.WriteLine("UDP server started");
+
+            // Bind to IPAddress.Any to listen on all interfaces
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, udpPort);
+
+            try
+            {
+                sock.Bind(endPoint);
+                Console.WriteLine($"Listening for connections on {udpIP}:{udpPort}");
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine($"Socket error during bind: {ex.Message}");
+                return; // Early exit on error
+            }
+
             byte[] buffer = new byte[1024];
 
             while (Program.isRunning)
             {
                 EndPoint senderEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                int bytesReceived = sock.ReceiveFrom(buffer, ref senderEndPoint);
+                int bytesReceived;
+
+                try
+                {
+                    bytesReceived = sock.ReceiveFrom(buffer, ref senderEndPoint);
+                }
+                catch (SocketException ex)
+                {
+                    Console.WriteLine($"Socket error on receive: {ex.Message}");
+                    continue; // Continue listening if a receive error occurs
+                }
 
                 // Extract the header and message
                 byte type = buffer[0];  // First byte for header type
@@ -42,6 +58,7 @@ public class UDP_server
             }
         }
     }
+
 
 
     public void ProcessMessage(byte receivedType)

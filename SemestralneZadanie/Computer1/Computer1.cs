@@ -1,4 +1,4 @@
-﻿using System.Data;
+﻿﻿using System.Data;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
@@ -15,7 +15,7 @@ namespace Computer1
         private static Client udpClient = new Client();
         private static UDP_server udpServer = new UDP_server();
         private static string destination_ip;
-        private static string source_ip = "192.168.1.2";
+        private static string source_ip = "192.168.1.3";
         private static int destination_port;
         private static int source_port;
         private static string message;
@@ -70,13 +70,12 @@ namespace Computer1
             header.SetMsg(Header.HeaderData.MSG_NONE);
             udpClient.SendMessage(destination_ip, destination_port, "SYN", header);
             Console.WriteLine("SYN packet sent. Waiting for SYN...");
-
             // Wait for SYN
             while (!SYN)
             {
-                Thread.Sleep(500); // Poll every 500ms
+                //1Thread.Sleep(500); // Poll every 500ms
             }
-
+            Console.WriteLine("here");
             // Send SYN_ACK after receiving SYN
             header.SetType(Header.HeaderData.SYN_ACK);
             header.SetMsg(Header.HeaderData.MSG_NONE);

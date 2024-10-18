@@ -12,6 +12,7 @@ namespace Computer1
         // Method to send a message using UDP
         public void SendMessage(string udpIP, int udpPort, string msg, Header.HeaderData headerData)
         {
+            Console.Write("Trying to send somethn=ing");
             // Convert the message to a byte array
             byte[] messageBytes = Encoding.ASCII.GetBytes(msg);
             byte[] headerBytes = new byte[2];
@@ -27,7 +28,6 @@ namespace Computer1
             using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
             {
                 // Set the ReuseAddress option
-                sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 
                 // Set up the remote endpoint using the IP and port
                 IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(udpIP), udpPort);
