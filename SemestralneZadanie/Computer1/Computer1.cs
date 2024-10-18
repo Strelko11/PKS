@@ -15,11 +15,14 @@ namespace Computer1
         private static Client udpClient = new Client();
         private static UDP_server udpServer = new UDP_server();
         private static string destination_ip;
-        private static string source_ip = "10.10.77.21";
+        private static string source_ip = "192.168.1.2";
         private static int destination_port;
         private static int source_port;
         private static string message;
         public static bool isRunning;
+        private static Header.HeaderData header = new Header.HeaderData();
+
+        
         static void Main(string[] args)
         {
             Console.WriteLine("Enter destination IP address:");
@@ -32,6 +35,11 @@ namespace Computer1
             Console.WriteLine("Enter source port:");
             input = Console.ReadLine();
             source_port = int.Parse(input);
+            
+            Console.WriteLine("Press enter if both devices are ready to be connected");
+            Console.ReadLine();
+
+            
             
             isRunning = true;
             
@@ -54,22 +62,54 @@ namespace Computer1
 
         public static void send_thread(string destination_ip, int destination_port)
         {
-            while (isRunning)
+            header.SetType(Header.HeaderData.SYN);
+            header.SetMsg(Header.HeaderData.MSG_NONE);
+            
+            udpClient.SendMessage(destination_ip, destination_port, "SYN", header);
+            if (udpClient.WaitFor_SYN_ACK(destination_port, destination_ip))
             {
-                Console.WriteLine("Enter message you want to send:");
-                message = Console.ReadLine();
-                if (message == "exit")
+                header.SetType(Header.HeaderData.ACK);
+                header.SetMsg(Header.HeaderData.MSG_NONE);
+                while (isRunning)
                 {
-                    isRunning = false;
-                    continue;
+                    Console.WriteLine("Enter message you want to send:");
+                    message = Console.ReadLine();
+                    if (message == "exit")
+                    {
+                        isRunning = false;
+                        continue;
+                    }
+                    udpClient.SendMessage(destination_ip, destination_port, message, header);
                 }
-                udpClient.SendMessage(destination_ip, destination_port, message);
             }
+            else
+            {
+                Console.WriteLine("Failed to receive SYN-ACK.");
+            }
+            
+           
         }
 
         public static void receive_thread(string source_ip, int source_port)
         {
-                udpServer.Start(source_ip, source_port);
+           
+            if (udpClient.WaitFor_SYN(destination_port, destination_ip))
+            {
+                // If a SYN packet is received, send a SYN-ACK response
+                header.SetType(Header.HeaderData.SYN_ACK);
+                header.SetMsg(Header.HeaderData.MSG_NONE);
+                udpClient.SendMessage(destination_ip, destination_port, "SYN-ACK", header);
+        
+                Console.WriteLine("SYN-ACK sent");
+                if (udpClient.WaitFor_ACK(destination_port, destination_ip))
+                {
+                    Console.WriteLine("ACK received. Now listening for messages...");
+                    // Start listening for further messages
+                    udpServer.Start(source_ip, source_port);
+                }
+            }
+                
+                
         }
     }
     
