@@ -65,13 +65,18 @@ namespace Computer1
 
         public static void send_thread(string destination_ip, int destination_port)
         {
-            // Send initial SYN message
-            header.SetType(Header.HeaderData.SYN);
-            header.SetMsg(Header.HeaderData.MSG_NONE);
-            udpClient.SendMessage(destination_ip, destination_port, "SYN", header);
-            Console.WriteLine(0x00);
-            Console.WriteLine($"\nPaket send {header.GetType()}\n");
-            Console.WriteLine("SYN packet sent. Waiting for SYN...\n");
+            while (!SYN)
+            {
+                // Send initial SYN message
+                header.SetType(Header.HeaderData.SYN);
+                header.SetMsg(Header.HeaderData.MSG_NONE);
+                udpClient.SendMessage(destination_ip, destination_port, "SYN", header);
+                Console.WriteLine(0x00);
+                Console.WriteLine($"\nPaket send {header.GetType()}\n");
+                Console.WriteLine("SYN packet sent. Waiting for SYN...\n");
+                Thread.Sleep(1000);
+            }
+            
             // Wait for SYN
             while (!SYN)
             {
@@ -79,11 +84,22 @@ namespace Computer1
                //1Thread.Sleep(500); // Poll every 500ms
             }
             Console.WriteLine("here");
-            // Send SYN_ACK after receiving SYN
-            header.SetType(Header.HeaderData.SYN_ACK);
-            header.SetMsg(Header.HeaderData.MSG_NONE);
-            udpClient.SendMessage(destination_ip, destination_port, "SYN_ACK", header);
-            Console.WriteLine("SYN_ACK packet sent. Waiting for ACK...");
+            while (!SYN_ACK)
+            {
+                // Send SYN_ACK after receiving SYN
+                
+                udpClient.SendMessage(destination_ip, destination_port, "SYN_ACK", header);
+                Console.WriteLine("SYN_ACK packet sent. Waiting for ACK...");
+                Thread.Sleep(1000);
+            }
+
+            while (SYN_ACK && !ACK)
+            {
+                header.SetType(Header.HeaderData.ACK);
+                header.SetMsg(Header.HeaderData.MSG_NONE);
+                Console.WriteLine("ACK packet sent. Waiting for Confirmation...");
+                Thread.Sleep(1000);
+            }
 
             // Wait for ACK
             while (!ACK)
