@@ -11,52 +11,20 @@ public class UDP_server
     {
         using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
         {
-            // Set the socket option to reuse the address
-            sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            Console.WriteLine("UDP server started");
-
-            // Bind to IPAddress.Any to listen on all interfaces
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, udpPort);
-
-            try
-            {
-                sock.Bind(endPoint);
-                Console.WriteLine($"Listening for connections on {udpIP}:{udpPort}");
-            }
-            catch (SocketException ex)
-            {
-                Console.WriteLine($"Socket error during bind: {ex.Message}");
-                return; // Early exit on error
-            }
-
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(udpIP), udpPort);
+            sock.Bind(endPoint);
+            //Console.WriteLine("Listening for connections on " + udpIP + ":" + udpPort);
+                
             byte[] buffer = new byte[1024];
 
             while (Program.isRunning)
             {
                 EndPoint senderEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                int bytesReceived;
-
-                try
-                {
-                    Console.WriteLine("Waiting for a connection...");
-                        sock.ReceiveFrom(buffer, ref senderEndPoint);
-                    Console.WriteLine("TU uz nie");
-                }
-                catch (SocketException ex)
-                {
-                    Console.WriteLine($"Socket error on receive: {ex.Message}");
-                    continue; // Continue listening if a receive error occurs
-                }
-
-                // Extract the header and message
+                int bytesReceived = sock.ReceiveFrom(buffer, ref senderEndPoint);
                 byte type = buffer[0];  // First byte for header type
-                //byte msgState = buffer[1];  // Second byte for message state
-
-                // Convert the remaining bytes to a message
-                //string receivedMessage = Encoding.ASCII.GetString(buffer, 2, bytesReceived - 2); // Adjust for header size
-
-                // Process the message based on the header type
-                Console.WriteLine("Tu som sa dostal");
+                byte msgState = buffer[1];  // Second byte for message state
+                string receivedMessage = Encoding.ASCII.GetString(buffer, 2, bytesReceived-2);
+                Console.WriteLine("Received message " + receivedMessage +"with type" + type +"and msgState" + msgState);
                 ProcessMessage(type);
             }
         }
