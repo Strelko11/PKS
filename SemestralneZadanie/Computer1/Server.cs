@@ -38,7 +38,9 @@ public class UDP_server
 
                 try
                 {
-                    bytesReceived = sock.ReceiveFrom(buffer, ref senderEndPoint);
+                    Console.WriteLine("Waiting for a connection...");
+                        sock.ReceiveFrom(buffer, ref senderEndPoint);
+                    Console.WriteLine("TU uz nie");
                 }
                 catch (SocketException ex)
                 {
@@ -48,12 +50,13 @@ public class UDP_server
 
                 // Extract the header and message
                 byte type = buffer[0];  // First byte for header type
-                byte msgState = buffer[1];  // Second byte for message state
+                //byte msgState = buffer[1];  // Second byte for message state
 
                 // Convert the remaining bytes to a message
-                string receivedMessage = Encoding.ASCII.GetString(buffer, 2, bytesReceived - 2); // Adjust for header size
+                //string receivedMessage = Encoding.ASCII.GetString(buffer, 2, bytesReceived - 2); // Adjust for header size
 
                 // Process the message based on the header type
+                Console.WriteLine("Tu som sa dostal");
                 ProcessMessage(type);
             }
         }
@@ -65,17 +68,17 @@ public class UDP_server
     {
         switch (receivedType)
         {
-            case Header.HeaderData.SYN:
+            case 0x00:
                 Console.WriteLine("SYN packet received");
                 Program.SYN = true; // Update the flag in the Program class
                 break;
 
-            case Header.HeaderData.SYN_ACK:
+            case 0x02:
                 Console.WriteLine("SYN ACK packet received");
                 Program.SYN_ACK = true; // Update the flag in the Program class
                 break;
 
-            case Header.HeaderData.ACK:
+            case 0x03:
                 Console.WriteLine("ACK packet received");
                 Program.ACK = true; // Update the flag in the Program class
                 break;

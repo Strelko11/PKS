@@ -15,7 +15,7 @@ namespace Computer1
         private static Client udpClient = new Client();
         private static UDP_server udpServer = new UDP_server();
         private static string destination_ip;
-        private static string source_ip = "192.168.1.3";
+        private static string source_ip = "192.168.1.2";
         private static int destination_port;
         private static int source_port;
         private static string message;
@@ -25,7 +25,7 @@ namespace Computer1
         public static bool SYN_ACK = false;
         public static bool ACK = false;
 
-
+//TODO: Vytvorit program cisto pre server a cisto pre klienta
         static void Main(string[] args)
         {
             Console.WriteLine("Enter destination IP address:");
@@ -69,11 +69,14 @@ namespace Computer1
             header.SetType(Header.HeaderData.SYN);
             header.SetMsg(Header.HeaderData.MSG_NONE);
             udpClient.SendMessage(destination_ip, destination_port, "SYN", header);
-            Console.WriteLine("SYN packet sent. Waiting for SYN...");
+            Console.WriteLine(0x00);
+            Console.WriteLine($"\nPaket send {header.GetType()}\n");
+            Console.WriteLine("SYN packet sent. Waiting for SYN...\n");
             // Wait for SYN
             while (!SYN)
             {
-                //1Thread.Sleep(500); // Poll every 500ms
+                
+               //1Thread.Sleep(500); // Poll every 500ms
             }
             Console.WriteLine("here");
             // Send SYN_ACK after receiving SYN

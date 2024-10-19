@@ -33,5 +33,10 @@ public class Header
         {
             this.msg = msg;
         }
+
+        public byte GetType()
+        {
+            return type;
+        }
     }
 }
