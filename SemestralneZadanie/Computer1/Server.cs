@@ -7,7 +7,12 @@ public class UDP_server
 {
 
     public byte type;
-    private static Client client;
+    private  Client client;
+
+    public UDP_server(Client client)
+    {
+        this.client = client;
+    }
 
     public void Start(string udpIP, int udpPort)
     {

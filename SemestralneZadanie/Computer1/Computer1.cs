@@ -13,7 +13,7 @@ namespace Computer1
     class Program
     {
         private static Client udpClient = new Client();
-        private static UDP_server udpServer = new UDP_server();
+        private static UDP_server udpServer = new UDP_server(udpClient);
         public static string destination_ip;
         private static string source_ip = "192.168.1.2";
         public static int destination_port;
