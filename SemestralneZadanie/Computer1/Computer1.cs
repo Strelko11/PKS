@@ -14,9 +14,9 @@ namespace Computer1
     {
         private static Client udpClient = new Client();
         private static UDP_server udpServer = new UDP_server();
-        private static string destination_ip;
+        public static string destination_ip;
         private static string source_ip = "192.168.1.2";
-        private static int destination_port;
+        public static int destination_port;
         private static int source_port;
         private static string message;
         public static bool isRunning;
@@ -65,47 +65,22 @@ namespace Computer1
 
         public static void send_thread(string destination_ip, int destination_port)
         {
-            while (!SYN)
+            while (!SYN_ACK)
             {
-                // Send initial SYN message
                 header.SetType(Header.HeaderData.SYN);
                 header.SetMsg(Header.HeaderData.MSG_NONE);
                 udpClient.SendMessage(destination_ip, destination_port, "SYN", header);
-                Console.WriteLine(0x00);
-                Console.WriteLine($"\nPaket send {header.GetType()}\n");
-                Console.WriteLine("SYN packet sent. Waiting for SYN...\n");
-                Thread.Sleep(1000);
-            }
-            
-            // Wait for SYN
-            while (!SYN)
-            {
+                Console.WriteLine("SYN packet sent. Waiting for SYN_ACK...");
+                Thread.Sleep(1000); // Poll every 1 second
+        
                 
-               //1Thread.Sleep(500); // Poll every 500ms
-            }
-            Console.WriteLine("here");
-            while (!SYN_ACK)
-            {
-                // Send SYN_ACK after receiving SYN
-                
-                udpClient.SendMessage(destination_ip, destination_port, "SYN_ACK", header);
-                Console.WriteLine("SYN_ACK packet sent. Waiting for ACK...");
-                Thread.Sleep(1000);
             }
 
-            while (SYN_ACK && !ACK)
-            {
-                header.SetType(Header.HeaderData.ACK);
-                header.SetMsg(Header.HeaderData.MSG_NONE);
-                Console.WriteLine("ACK packet sent. Waiting for Confirmation...");
-                Thread.Sleep(1000);
-            }
-
-            // Wait for ACK
-            while (!ACK)
-            {
-                Thread.Sleep(500); // Poll every 500ms
-            }
+            // Second step: Send ACK after receiving SYN_ACK
+            header.SetType(Header.HeaderData.ACK);
+            header.SetMsg(Header.HeaderData.MSG_NONE);
+            udpClient.SendMessage(destination_ip, destination_port, "ACK", header);
+            Console.WriteLine("ACK packet sent. Handshake complete!");
 
             // Message sending loop
             while (isRunning)
@@ -126,6 +101,25 @@ namespace Computer1
         public static void receive_thread(string source_ip, int source_port)
         {
             udpServer.Start(source_ip, source_port);
+
+            while (!SYN_ACK)
+            {
+                // Check for SYN and respond with SYN_ACK
+                if (!SYN_ACK && SYN)
+                {
+                    Console.WriteLine("SYN received, sending SYN_ACK...");
+                    Header.HeaderData responseHeader = new Header.HeaderData();
+                    responseHeader.SetType(Header.HeaderData.SYN_ACK);
+                    responseHeader.SetMsg(Header.HeaderData.MSG_NONE); // No additional message payload
+                    udpClient.SendMessage(destination_ip, destination_port, "SYN_ACK", responseHeader);
+                }
+                else if (SYN && ACK && SYN_ACK)
+                {
+                    Console.WriteLine("ACK received, handshake complete. Ready for communication.");
+                    // Handshake is complete, now listen for actual messages
+                }
+            }
         }
+
     }
 }

@@ -12,7 +12,7 @@ namespace Computer1
         // Method to send a message using UDP
         public void SendMessage(string udpIP, int udpPort, string msg, Header.HeaderData headerData)
         {
-            Console.Write("Trying to send somethn=ing");
+            
             // Convert the message to a byte array
             byte[] messageBytes = Encoding.ASCII.GetBytes(msg);
             byte[] headerBytes = new byte[2];
