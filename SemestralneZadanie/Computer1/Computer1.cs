@@ -15,9 +15,11 @@ namespace Computer1
         private static Client udpClient = new Client();
         private static UDP_server udpServer = new UDP_server(udpClient);
         public static string destination_ip;
-        private static string source_ip = "192.168.1.2";
-        public static int destination_port;
-        private static int source_port;
+        private static string source_ip = "127.0.0.1";
+        public static int destination_listening_port;
+        public static int destination_sending_port;
+        private static int source_listening_port;
+        private static int source_sending_port;
         private static string message;
         public static bool isRunning;
         private static Header.HeaderData header = new Header.HeaderData();
@@ -28,16 +30,28 @@ namespace Computer1
 //TODO: Vytvorit program cisto pre server a cisto pre klienta
         static void Main(string[] args)
         {
+            Console.WriteLine("Enter source IP address:");
+            source_ip = Console.ReadLine();
+            
             Console.WriteLine("Enter destination IP address:");
             destination_ip = Console.ReadLine();
 
-            Console.WriteLine("Enter destination port:");
+            Console.WriteLine("Enter destination listening port:");
             string input = Console.ReadLine();
-            destination_port = int.Parse(input);
-
-            Console.WriteLine("Enter source port:");
+            destination_listening_port = int.Parse(input);
+            
+            Console.WriteLine("Enter destination sending port:");
             input = Console.ReadLine();
-            source_port = int.Parse(input);
+            destination_sending_port = int.Parse(input);
+
+
+            Console.WriteLine("Enter source listening port:");
+            input = Console.ReadLine();
+            source_listening_port = int.Parse(input);
+            
+            Console.WriteLine("Enter source sending port:");
+            input = Console.ReadLine();
+            source_sending_port = int.Parse(input);
 
             Console.WriteLine("Press enter if both devices are ready to be connected");
             Console.ReadLine();
@@ -46,10 +60,10 @@ namespace Computer1
 
             isRunning = true;
 
-            Thread sendThread = new Thread(() => send_thread(destination_ip, destination_port));
+            Thread sendThread = new Thread(() => send_thread(destination_ip, destination_listening_port));
             sendThread.Start();
 
-            Thread receiveThread = new Thread(() => receive_thread(source_ip, source_port));
+            Thread receiveThread = new Thread(() => receive_thread(source_ip, source_listening_port));
             receiveThread.Start();
 
             //Console.WriteLine("Press enter to exit");
@@ -63,14 +77,15 @@ namespace Computer1
 
         }
 
-        public static void send_thread(string destination_ip, int destination_port)
+        public static void send_thread(string destination_ip, int destination_listening_port)
         {
+            Console.WriteLine("SYN packet sent");
             while (!SYN_ACK)
             {
                 header.SetType(Header.HeaderData.SYN);
                 header.SetMsg(Header.HeaderData.MSG_NONE);
-                udpClient.SendMessage(destination_ip, destination_port, "SYN", header);
-                Console.WriteLine("SYN packet sent. Waiting for SYN_ACK...");
+                udpClient.SendMessage(destination_ip, destination_listening_port, "SYN", header);
+                //Console.WriteLine("SYN packet sent. Waiting for SYN_ACK...");
                 Thread.Sleep(1000); // Poll every 1 second
         
                 
@@ -79,12 +94,12 @@ namespace Computer1
             // Second step: Send ACK after receiving SYN_ACK
             header.SetType(Header.HeaderData.ACK);
             header.SetMsg(Header.HeaderData.MSG_NONE);
-            udpClient.SendMessage(destination_ip, destination_port, "ACK", header);
+            udpClient.SendMessage(destination_ip, destination_listening_port, "ACK", header);
             Console.WriteLine("ACK packet sent. Handshake complete!");
 
             // Message sending loop
             while (isRunning)
-            {
+            {   
                 Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
                 message = Console.ReadLine();
                 if (message == "exit")
@@ -94,12 +109,13 @@ namespace Computer1
                 }
 
                 // Send the actual message
-                udpClient.SendMessage(destination_ip, destination_port, message, header);
+                udpClient.SendMessage(destination_ip, destination_listening_port, message, header);
             }
         }
 
         public static void receive_thread(string source_ip, int source_port)
         {
+            header.SetType(Header.HeaderData.TEST);
             udpServer.Start(source_ip, source_port);
 
             while (!SYN_ACK)
@@ -111,7 +127,7 @@ namespace Computer1
                     Header.HeaderData responseHeader = new Header.HeaderData();
                     responseHeader.SetType(Header.HeaderData.SYN_ACK);
                     responseHeader.SetMsg(Header.HeaderData.MSG_NONE); // No additional message payload
-                    udpClient.SendMessage(destination_ip, destination_port, "SYN_ACK", responseHeader);
+                    udpClient.SendMessage(destination_ip, destination_listening_port, "SYN_ACK", responseHeader);
                 }
                 else if (SYN && ACK && SYN_ACK)
                 {
@@ -122,4 +138,6 @@ namespace Computer1
         }
 
     }
+
+    
 }

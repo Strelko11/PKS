@@ -18,6 +18,7 @@ public class Header
         public const byte KEEP_ALIVE = 0x08;   // Keep-alive informácia
         public const byte NACK = 0x09;         // Negatívne potvrdenie
         public const byte LAST_FRAGMENT = 0x0F; // Posledný fragment
+        public const byte TEST = 0x0A;
 
         // Constants for message states
         public const byte MSG_NONE = 0x00;     // Žiadne dáta (napr. Keep-alive)

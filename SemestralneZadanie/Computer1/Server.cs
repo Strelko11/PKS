@@ -32,7 +32,7 @@ public class UDP_server
                 byte msgState = buffer[1]; // Second byte for message state
                 string receivedMessage = Encoding.ASCII.GetString(buffer, 2, bytesReceived - 2);
                 Console.WriteLine(
-                    "Received message " + receivedMessage + "with type" + type + "and msgState" + msgState);
+                    "Received message " + receivedMessage);
                 ProcessMessage(type);
             }
         }
@@ -45,27 +45,27 @@ public class UDP_server
         switch (receivedType)
         {
             case 0x00:
-                Console.WriteLine("SYN packet received");
+                //Console.WriteLine("SYN packet received");
                 Program.SYN = true; // Update the flag in the Program class
-                Console.WriteLine($"SYN state: {Program.SYN}");
+                //Console.WriteLine($"SYN state: {Program.SYN}");
                 // Respond with SYN-ACK
                 RespondToSYN();
                 break;
 
             case 0x02:
-                Console.WriteLine("SYN_ACK packet received");
+                //Console.WriteLine("SYN_ACK packet received");
                 Program.SYN_ACK = true; // Update the flag in the Program class
-                Console.WriteLine($"SYN_ACK state: {Program.SYN_ACK}");
+                //Console.WriteLine($"SYN_ACK state: {Program.SYN_ACK}");
                 break;
 
             case 0x03:
-                Console.WriteLine("ACK packet received");
+               //Console.WriteLine("ACK packet received");
                 Program.ACK = true; // Update the flag in the Program class
-                Console.WriteLine($"ACK state: {Program.ACK}");
+                //Console.WriteLine($"ACK state: {Program.ACK}");
                 break;
 
             default:
-                Console.WriteLine("Unknown message type received.");
+                Console.WriteLine("Message received");
                 break;
         }
     }
@@ -79,7 +79,7 @@ public class UDP_server
         responseHeader.SetType(Header.HeaderData.SYN_ACK);
         responseHeader.SetMsg(Header.HeaderData.MSG_NONE); // No additional message payload
         // Send the SYN-ACK response back to the client
-        client.SendMessage(Program.destination_ip, Program.destination_port, "SYN_ACK", responseHeader);
+        client.SendMessage(Program.destination_ip, Program.destination_listening_port, "SYN_ACK", responseHeader);
     }
 
 }

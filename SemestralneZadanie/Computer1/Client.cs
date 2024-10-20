@@ -40,7 +40,7 @@ namespace Computer1
             }
         }
 
-        public bool WaitFor_SYN(int udpPort, string udpIp)
+        /*public bool WaitFor_SYN(int udpPort, string udpIp)
         {
             using (var udpListener = new UdpClient(udpPort))
             {
@@ -121,6 +121,6 @@ namespace Computer1
 
                 return false;
             }
-        }
+        }*/
     }
 }
