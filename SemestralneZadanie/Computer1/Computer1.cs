@@ -18,20 +18,19 @@ namespace Computer1
         private static string source_ip = "127.0.0.1";
         public static int destination_listening_port;
         public static int destination_sending_port;
-        private static int source_listening_port;
-        private static int source_sending_port;
+        public static int source_listening_port;
+        public static int source_sending_port;
         private static string message;
         public static bool isRunning;
         private static Header.HeaderData header = new Header.HeaderData();
         public static bool SYN = false;
         public static bool SYN_ACK = false;
         public static bool ACK = false;
-
-//TODO: Vytvorit program cisto pre server a cisto pre klienta
+        
         static void Main(string[] args)
         {
-            Console.WriteLine("Enter source IP address:");
-            source_ip = Console.ReadLine();
+            //Console.WriteLine("Enter source IP address:");
+           //source_ip = Console.ReadLine();
             
             Console.WriteLine("Enter destination IP address:");
             destination_ip = Console.ReadLine();
@@ -84,22 +83,22 @@ namespace Computer1
             {
                 header.SetType(Header.HeaderData.SYN);
                 header.SetMsg(Header.HeaderData.MSG_NONE);
-                udpClient.SendMessage(destination_ip, destination_listening_port, "SYN", header);
+                udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port, "SYN", header);
                 //Console.WriteLine("SYN packet sent. Waiting for SYN_ACK...");
-                Thread.Sleep(1000); // Poll every 1 second
+                Thread.Sleep(1000); 
         
                 
             }
 
-            // Second step: Send ACK after receiving SYN_ACK
             header.SetType(Header.HeaderData.ACK);
             header.SetMsg(Header.HeaderData.MSG_NONE);
-            udpClient.SendMessage(destination_ip, destination_listening_port, "ACK", header);
+            udpClient.SendMessage(destination_ip, source_sending_port,destination_listening_port, "ACK", header);
             Console.WriteLine("ACK packet sent. Handshake complete!");
 
-            // Message sending loop
             while (isRunning)
             {   
+                header.SetType(Header.HeaderData.TEST);
+                header.SetMsg(Header.HeaderData.MSG_NONE);
                 Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
                 message = Console.ReadLine();
                 if (message == "exit")
@@ -108,8 +107,7 @@ namespace Computer1
                     continue;
                 }
 
-                // Send the actual message
-                udpClient.SendMessage(destination_ip, destination_listening_port, message, header);
+                udpClient.SendMessage(destination_ip, source_sending_port,destination_listening_port, message, header);
             }
         }
 
@@ -120,19 +118,17 @@ namespace Computer1
 
             while (!SYN_ACK)
             {
-                // Check for SYN and respond with SYN_ACK
                 if (!SYN_ACK && SYN)
                 {
                     Console.WriteLine("SYN received, sending SYN_ACK...");
                     Header.HeaderData responseHeader = new Header.HeaderData();
                     responseHeader.SetType(Header.HeaderData.SYN_ACK);
-                    responseHeader.SetMsg(Header.HeaderData.MSG_NONE); // No additional message payload
-                    udpClient.SendMessage(destination_ip, destination_listening_port, "SYN_ACK", responseHeader);
+                    responseHeader.SetMsg(Header.HeaderData.MSG_NONE); 
+                    udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port, "SYN_ACK", responseHeader);
                 }
                 else if (SYN && ACK && SYN_ACK)
                 {
                     Console.WriteLine("ACK received, handshake complete. Ready for communication.");
-                    // Handshake is complete, now listen for actual messages
                 }
             }
         }

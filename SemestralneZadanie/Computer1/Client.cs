@@ -9,34 +9,27 @@ namespace Computer1
     {
         private static UDP_server server;
 
-        // Method to send a message using UDP
-        public void SendMessage(string udpIP, int udpPort, string msg, Header.HeaderData headerData)
+        public void SendMessage(string udpIP, int localPort, int remotePort, string msg, Header.HeaderData headerData)
         {
-            
-            // Convert the message to a byte array
             byte[] messageBytes = Encoding.ASCII.GetBytes(msg);
             byte[] headerBytes = new byte[2];
             headerBytes[0] = headerData.type;
             headerBytes[1] = headerData.msg;
 
-            // Combine header and message into one byte array
             byte[] dataToSend = new byte[headerBytes.Length + messageBytes.Length];
-            Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length); // Copy header to the beginning
-            Buffer.BlockCopy(messageBytes, 0, dataToSend, headerBytes.Length, messageBytes.Length); // Copy message after header
+            Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length); 
+            Buffer.BlockCopy(messageBytes, 0, dataToSend, headerBytes.Length, messageBytes.Length); 
 
-            // Create a new UDP socket
             using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
             {
-                // Set the ReuseAddress option
-                
-                // Set up the remote endpoint using the IP and port
-                IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(udpIP), udpPort);
-                
-                // Send the data to the remote endpoint
-                sock.SendTo(dataToSend, endPoint);
+                IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, localPort);
+                sock.Bind(localEndPoint);
 
-                // Output the result to the console
-                Console.WriteLine($"Sent message to {udpIP}:{udpPort} {msg}");
+                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(udpIP), remotePort);
+
+                sock.SendTo(dataToSend, remoteEndPoint);
+
+                Console.WriteLine($"Sent message from port {localPort} to {udpIP}:{remotePort} {msg}");
             }
         }
 
