@@ -45,21 +45,22 @@ public class UDP_server
         switch (receivedType)
         {
             case 0x00:
-                //Console.WriteLine("SYN packet received");
+                Console.WriteLine("SYN packet received");
                 Program.SYN = true; 
                 //Console.WriteLine($"SYN state: {Program.SYN}");
                 RespondToSYN();
                 break;
 
             case 0x02:
-                //Console.WriteLine("SYN_ACK packet received");
+                Console.WriteLine("SYN_ACK packet received");
                 Program.SYN_ACK = true; 
                 //Console.WriteLine($"SYN_ACK state: {Program.SYN_ACK}");
                 break;
 
             case 0x03:
-               //Console.WriteLine("ACK packet received");
+                Console.WriteLine("ACK packet received");
                 Program.ACK = true; 
+                Program.handshake_complete = true;
                 //Console.WriteLine($"ACK state: {Program.ACK}");
                 break;
 

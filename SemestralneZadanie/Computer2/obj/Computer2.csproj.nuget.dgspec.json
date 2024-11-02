@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/Computer2/Computer2.csproj": {}
+    "/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer2/Computer2.csproj": {}
   },
   "projects": {
-    "/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/Computer2/Computer2.csproj": {
+    "/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer2/Computer2.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/Computer2/Computer2.csproj",
+        "projectUniqueName": "/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer2/Computer2.csproj",
         "projectName": "Computer2",
-        "projectPath": "/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/Computer2/Computer2.csproj",
+        "projectPath": "/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer2/Computer2.csproj",
         "packagesPath": "/Users/macbook/.nuget/packages/",
-        "outputPath": "/Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/Computer2/obj/",
+        "outputPath": "/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer2/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/macbook/.nuget/NuGet/NuGet.Config"

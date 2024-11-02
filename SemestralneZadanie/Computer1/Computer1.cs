@@ -26,6 +26,8 @@ namespace Computer1
         public static bool SYN = false;
         public static bool SYN_ACK = false;
         public static bool ACK = false;
+        public static bool iniciator = false;
+        public static bool handshake_complete = false; 
         
         static void Main(string[] args)
         {
@@ -52,63 +54,80 @@ namespace Computer1
             input = Console.ReadLine();
             source_sending_port = int.Parse(input);
 
-            Console.WriteLine("Press enter if both devices are ready to be connected");
-            Console.ReadLine();
-
-
-
             isRunning = true;
-
-            Thread sendThread = new Thread(() => send_thread(destination_ip, destination_listening_port));
-            sendThread.Start();
 
             Thread receiveThread = new Thread(() => receive_thread(source_ip, source_listening_port));
             receiveThread.Start();
+            Thread sendThread = new Thread(() => send_thread(destination_ip, destination_listening_port));
+            sendThread.Start();
+
+
+            Console.WriteLine("Do you want to initiate the handshake? (y/n)");
+            input = Console.ReadLine();
+            if(input == "y"){
+                iniciator = true;
+            }
+        
+            
+
+            Console.WriteLine("Press enter on handshake initiator side if both devices are ready to be connected");
+            Console.ReadLine();
+
+            handshake(destination_ip,destination_listening_port,iniciator);
+            
+            
+
 
             //Console.WriteLine("Press enter to exit");
             //Console.ReadLine();
-
             //isRunning = false;
 
             sendThread.Join();
             receiveThread.Join();
 
+        }
 
+        public static void handshake(string destination_ip, int destination_listening_port, bool iniciator){
+            if(iniciator){
+                Console.WriteLine("SYN packet sent");
+                while (!SYN_ACK){
+                    header.SetType(Header.HeaderData.SYN);
+                    header.SetMsg(Header.HeaderData.MSG_NONE);
+                    udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port, "SYN", header);
+                    //Console.WriteLine("SYN packet sent. Waiting for SYN_ACK...");
+                    Thread.Sleep(2000);         
+                }
+                header.SetType(Header.HeaderData.ACK);
+                header.SetMsg(Header.HeaderData.MSG_NONE);
+                udpClient.SendMessage(destination_ip, source_sending_port,destination_listening_port, "ACK", header);
+                Console.WriteLine("ACK packet sent. Handshake complete!");
+                handshake_complete = true;
+
+                
+            }
+            
         }
 
         public static void send_thread(string destination_ip, int destination_listening_port)
-        {
-            Console.WriteLine("SYN packet sent");
-            while (!SYN_ACK)
-            {
-                header.SetType(Header.HeaderData.SYN);
-                header.SetMsg(Header.HeaderData.MSG_NONE);
-                udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port, "SYN", header);
-                //Console.WriteLine("SYN packet sent. Waiting for SYN_ACK...");
-                Thread.Sleep(1000); 
-        
-                
-            }
-
-            header.SetType(Header.HeaderData.ACK);
-            header.SetMsg(Header.HeaderData.MSG_NONE);
-            udpClient.SendMessage(destination_ip, source_sending_port,destination_listening_port, "ACK", header);
-            Console.WriteLine("ACK packet sent. Handshake complete!");
-
+        {   
             while (isRunning)
             {   
-                header.SetType(Header.HeaderData.TEST);
-                header.SetMsg(Header.HeaderData.MSG_NONE);
-                Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
-                message = Console.ReadLine();
-                if (message == "exit")
-                {
-                    isRunning = false;
-                    continue;
-                }
+                if(handshake_complete){
+                    header.SetType(Header.HeaderData.TEST);
+                    header.SetMsg(Header.HeaderData.MSG_NONE);
+                    Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
+                    message = Console.ReadLine();
+                    if (message == "exit")
+                    {
+                        isRunning = false;
+                        continue;
+                    }
 
-                udpClient.SendMessage(destination_ip, source_sending_port,destination_listening_port, message, header);
+                    udpClient.SendMessage(destination_ip, source_sending_port,destination_listening_port, message, header);
+                }
+                
             }
+            
         }
 
         public static void receive_thread(string source_ip, int source_port)
@@ -116,21 +135,7 @@ namespace Computer1
             header.SetType(Header.HeaderData.TEST);
             udpServer.Start(source_ip, source_port);
 
-            while (!SYN_ACK)
-            {
-                if (!SYN_ACK && SYN)
-                {
-                    Console.WriteLine("SYN received, sending SYN_ACK...");
-                    Header.HeaderData responseHeader = new Header.HeaderData();
-                    responseHeader.SetType(Header.HeaderData.SYN_ACK);
-                    responseHeader.SetMsg(Header.HeaderData.MSG_NONE); 
-                    udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port, "SYN_ACK", responseHeader);
-                }
-                else if (SYN && ACK && SYN_ACK)
-                {
-                    Console.WriteLine("ACK received, handshake complete. Ready for communication.");
-                }
-            }
+           
         }
 
     }
