@@ -8,6 +8,7 @@ public class UDP_server
 
     public byte type;
     private  Client client;
+    public string receivedMessage;
 
     public UDP_server(Client client)
     {
@@ -30,9 +31,11 @@ public class UDP_server
                 int bytesReceived = sock.ReceiveFrom(buffer, ref senderEndPoint);
                 byte type = buffer[0]; 
                 byte msgState = buffer[1]; 
-                string receivedMessage = Encoding.ASCII.GetString(buffer, 2, bytesReceived - 2);
+                receivedMessage = Encoding.ASCII.GetString(buffer, 2, bytesReceived - 2);
                 Console.WriteLine(
                     "Received message " + receivedMessage);
+                Program.message_received = true;
+                Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
                 ProcessMessage(type);
             }
         }
@@ -45,27 +48,28 @@ public class UDP_server
         switch (receivedType)
         {
             case 0x00:
-                Console.WriteLine("SYN packet received");
+                //Console.WriteLine("SYN packet received");
                 Program.SYN = true; 
                 //Console.WriteLine($"SYN state: {Program.SYN}");
                 RespondToSYN();
                 break;
 
             case 0x02:
-                Console.WriteLine("SYN_ACK packet received");
+                //Console.WriteLine("SYN_ACK packet received");
                 Program.SYN_ACK = true; 
                 //Console.WriteLine($"SYN_ACK state: {Program.SYN_ACK}");
                 break;
 
             case 0x03:
-                Console.WriteLine("ACK packet received");
+                //Console.WriteLine("ACK packet received");
                 Program.ACK = true; 
+                Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n\n");
                 Program.handshake_complete = true;
                 //Console.WriteLine($"ACK state: {Program.ACK}");
                 break;
 
             default:
-                Console.WriteLine("Message received");
+                //Console.WriteLine("Message received");
                 break;
         }
     }

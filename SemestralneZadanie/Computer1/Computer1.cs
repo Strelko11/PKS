@@ -27,32 +27,45 @@ namespace Computer1
         public static bool SYN_ACK = false;
         public static bool ACK = false;
         public static bool iniciator = false;
-        public static bool handshake_complete = false; 
-        
+        public static bool handshake_complete = false;
+        public static bool message_received = false;
+
         static void Main(string[] args)
         {
             //Console.WriteLine("Enter source IP address:");
-           //source_ip = Console.ReadLine();
-            
-            Console.WriteLine("Enter destination IP address:");
-            destination_ip = Console.ReadLine();
+            //source_ip = Console.ReadLine();
 
-            Console.WriteLine("Enter destination listening port:");
-            string input = Console.ReadLine();
-            destination_listening_port = int.Parse(input);
-            
-            Console.WriteLine("Enter destination sending port:");
-            input = Console.ReadLine();
-            destination_sending_port = int.Parse(input);
+            // Console.WriteLine("Enter destination IP address:");
+            // destination_ip = Console.ReadLine();
+
+            // Console.WriteLine("Enter destination listening port:");
+            // string input = Console.ReadLine();
+            // destination_listening_port = int.Parse(input);
+
+            // Console.WriteLine("Enter destination sending port:");
+            // input = Console.ReadLine();
+            // destination_sending_port = int.Parse(input);
 
 
-            Console.WriteLine("Enter source listening port:");
-            input = Console.ReadLine();
-            source_listening_port = int.Parse(input);
-            
-            Console.WriteLine("Enter source sending port:");
-            input = Console.ReadLine();
-            source_sending_port = int.Parse(input);
+            // Console.WriteLine("Enter source listening port:");
+            // input = Console.ReadLine();
+            // source_listening_port = int.Parse(input);
+
+            // Console.WriteLine("Enter source sending port:");
+            // input = Console.ReadLine();
+            // source_sending_port = int.Parse(input);
+
+            if (args.Length < 4)
+            {
+                Console.WriteLine("Usage: <destination_ip> <destination_listening_port> <destination_sending_port> <source_listening_port> <source_sending_port>");
+                return;
+            }
+
+            destination_ip = args[0];
+            destination_listening_port = int.Parse(args[1]);
+            destination_sending_port = int.Parse(args[2]);
+            source_listening_port = int.Parse(args[3]);
+            source_sending_port = int.Parse(args[4]);
 
             isRunning = true;
 
@@ -62,20 +75,37 @@ namespace Computer1
             sendThread.Start();
 
 
-            Console.WriteLine("Do you want to initiate the handshake? (y/n)");
-            input = Console.ReadLine();
-            if(input == "y"){
+            // Console.WriteLine("Do you want to initiate the handshake? (y/n)");
+            // input = Console.ReadLine();
+            // if(input == "y"){
+            //     iniciator = true;
+            // }
+
+            Console.WriteLine("Is this device an initiator(y/n):");
+            var respone = Console.ReadLine();
+            if (respone == "y")
+            {
                 iniciator = true;
             }
-        
-            
 
-            Console.WriteLine("Press enter on handshake initiator side if both devices are ready to be connected");
-            Console.ReadLine();
+            Console.WriteLine("\n\n\n\n********************************************************************");
+            Console.WriteLine("After both devices have been set up:");
 
-            handshake(destination_ip,destination_listening_port,iniciator);
-            
-            
+
+
+            if (iniciator)
+            {
+                Console.WriteLine("Press Enter to initiate the handshake...");
+                Console.ReadLine();
+                handshake(destination_ip, destination_listening_port, true);
+            }
+            else
+            {
+                Console.WriteLine("Waiting for the other device to initiate the handshake...");
+            }
+
+
+
 
 
             //Console.WriteLine("Press enter to exit");
@@ -87,34 +117,41 @@ namespace Computer1
 
         }
 
-        public static void handshake(string destination_ip, int destination_listening_port, bool iniciator){
-            if(iniciator){
+        public static void handshake(string destination_ip, int destination_listening_port, bool iniciator)
+        {
+            Console.WriteLine("***************** HANDSHAKE *****************");
+            if (iniciator)
+            {
                 Console.WriteLine("SYN packet sent");
-                while (!SYN_ACK){
+                while (!SYN_ACK)
+                {
                     header.SetType(Header.HeaderData.SYN);
                     header.SetMsg(Header.HeaderData.MSG_NONE);
-                    udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port, "SYN", header);
+                    udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, "SYN", header);
                     //Console.WriteLine("SYN packet sent. Waiting for SYN_ACK...");
-                    Thread.Sleep(2000);         
                 }
                 header.SetType(Header.HeaderData.ACK);
                 header.SetMsg(Header.HeaderData.MSG_NONE);
-                udpClient.SendMessage(destination_ip, source_sending_port,destination_listening_port, "ACK", header);
-                Console.WriteLine("ACK packet sent. Handshake complete!");
+                udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, "ACK", header);
+                Console.WriteLine("Handshake complete!");
                 handshake_complete = true;
-
-                
+                Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n\n");
             }
-            
+
         }
 
+       
         public static void send_thread(string destination_ip, int destination_listening_port)
-        {   
+        {
+
+            // header.SetType(Header.HeaderData.TEST);
+            // header.SetMsg(Header.HeaderData.MSG_NONE);
+            // udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, header);
+
             while (isRunning)
-            {   
-                if(handshake_complete){
-                    header.SetType(Header.HeaderData.TEST);
-                    header.SetMsg(Header.HeaderData.MSG_NONE);
+            {
+                if (handshake_complete)
+                {
                     Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
                     message = Console.ReadLine();
                     if (message == "exit")
@@ -123,22 +160,22 @@ namespace Computer1
                         continue;
                     }
 
-                    udpClient.SendMessage(destination_ip, source_sending_port,destination_listening_port, message, header);
+                    header.SetType(Header.HeaderData.TEST);
+                    header.SetMsg(Header.HeaderData.MSG_NONE);
+                    udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, header);
                 }
-                
             }
-            
         }
+
+        
 
         public static void receive_thread(string source_ip, int source_port)
         {
             header.SetType(Header.HeaderData.TEST);
             udpServer.Start(source_ip, source_port);
-
-           
         }
 
     }
 
-    
+
 }

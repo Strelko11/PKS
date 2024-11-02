@@ -29,7 +29,7 @@ namespace Computer1
 
                 sock.SendTo(dataToSend, remoteEndPoint);
 
-                Console.WriteLine($"Sent message from port {localPort} to {udpIP}:{remotePort} {msg}");
+                Console.WriteLine($"Sent message from port {localPort} to {udpIP} : {remotePort} {msg}");
             }
         }
 
