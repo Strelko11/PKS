@@ -8,6 +8,7 @@ using System.Timers;
 using System.Threading.Tasks;
 
 
+
 namespace Computer1
 {
     class Program
@@ -30,7 +31,7 @@ namespace Computer1
         public static bool handshake_complete = false;
         public static bool message_received = false;
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             //Console.WriteLine("Enter source IP address:");
             //source_ip = Console.ReadLine();
@@ -58,7 +59,7 @@ namespace Computer1
             if (args.Length < 4)
             {
                 Console.WriteLine("Usage: <destination_ip> <destination_listening_port> <destination_sending_port> <source_listening_port> <source_sending_port>");
-                return;
+                return 0;
             }
 
             destination_ip = args[0];
@@ -113,7 +114,10 @@ namespace Computer1
             //isRunning = false;
 
             sendThread.Join();
+            Console.WriteLine("Exited send thread");
             receiveThread.Join();
+            Console.WriteLine("Exiting");
+            return 0;
 
         }
 
@@ -140,7 +144,7 @@ namespace Computer1
 
         }
 
-       
+
         public static void send_thread(string destination_ip, int destination_listening_port)
         {
 
@@ -156,6 +160,9 @@ namespace Computer1
                     message = Console.ReadLine();
                     if (message == "exit")
                     {
+                        header.SetType(Header.HeaderData.TEST);
+                        header.SetMsg(Header.HeaderData.MSG_NONE);
+                        udpClient.SendMessage(source_ip, source_sending_port, source_listening_port, message, header);
                         isRunning = false;
                         continue;
                     }
@@ -165,14 +172,20 @@ namespace Computer1
                     udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, header);
                 }
             }
+            Console.WriteLine("Exited program");
         }
 
-        
+
 
         public static void receive_thread(string source_ip, int source_port)
         {
-            header.SetType(Header.HeaderData.TEST);
-            udpServer.Start(source_ip, source_port);
+            while (isRunning)
+            {
+                header.SetType(Header.HeaderData.TEST);
+                udpServer.Start(source_ip, source_port);
+            }
+            Console.WriteLine("Exited receive thread");
+
         }
 
     }

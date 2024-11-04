@@ -1,3 +1,4 @@
+
 namespace Computer1;
 using System.Net;
 using System.Net.Sockets;
@@ -32,13 +33,18 @@ public class UDP_server
                 byte type = buffer[0]; 
                 byte msgState = buffer[1]; 
                 receivedMessage = Encoding.ASCII.GetString(buffer, 2, bytesReceived - 2);
+                if(receivedMessage == "exit"){
+                    break;
+                }
                 Console.WriteLine(
                     "Received message " + receivedMessage);
                 Program.message_received = true;
                 Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
                 ProcessMessage(type);
             }
+            Console.WriteLine("Exited while");
         }
+        Console.WriteLine("Exited receive thread");
     }
 
     
@@ -155,4 +161,3 @@ public class UDP_server
             break;
     }
 }*/
-
