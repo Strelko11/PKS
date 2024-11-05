@@ -33,18 +33,25 @@ public class UDP_server
                 byte type = buffer[0]; 
                 byte msgState = buffer[1]; 
                 receivedMessage = Encoding.ASCII.GetString(buffer, 2, bytesReceived - 2);
+                
                 if(receivedMessage == "exit"){
                     break;
                 }
                 Console.WriteLine(
                     "Received message " + receivedMessage);
                 Program.message_received = true;
-                Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
+                if(Program.handshake_complete && /*!Program.message_ACK_sent &&*/ type != Header.HeaderData.ACK){
+                    ACK_message();
+                }
+                //Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
                 ProcessMessage(type);
+                
+                
+                
             }
-            Console.WriteLine("Exited while");
+            //Console.WriteLine("Exited while");
         }
-        Console.WriteLine("Exited receive thread");
+        //Console.WriteLine("Exited receive thread");
     }
 
     
@@ -68,9 +75,18 @@ public class UDP_server
 
             case 0x03:
                 //Console.WriteLine("ACK packet received");
-                Program.ACK = true; 
-                Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n\n");
-                Program.handshake_complete = true;
+                if(!Program.handshake_complete){
+                    Program.handshake_ACK = true; 
+                    Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n\n");
+                    Program.handshake_complete = true;
+                }
+                else{
+                    Thread.Sleep(1000);
+                    Program.message_ACK = true;
+                    //Console.WriteLine("Sent ACK packet for message");
+                    
+                }
+                
                 //Console.WriteLine($"ACK state: {Program.ACK}");
                 break;
 
@@ -87,6 +103,17 @@ public class UDP_server
         responseHeader.SetType(Header.HeaderData.SYN_ACK);
         responseHeader.SetMsg(Header.HeaderData.MSG_NONE); 
         client.SendMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, "SYN_ACK", responseHeader);
+    }
+
+    private void ACK_message(){
+        Console.WriteLine("Sent ACK for received message");
+        Header.HeaderData responseHeader = new Header.HeaderData();
+        responseHeader.SetType(Header.HeaderData.ACK);
+        responseHeader.SetMsg(Header.HeaderData.MSG_NONE);
+        client.SendMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, "ACK", responseHeader);
+        Program.message_ACK_sent = true;
+        Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
+
     }
 
 }
