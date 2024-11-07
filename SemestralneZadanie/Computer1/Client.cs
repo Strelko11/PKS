@@ -9,27 +9,46 @@ namespace Computer1
     {
         private static UDP_server server;
 
-        public void SendMessage(string udpIP, int localPort, int remotePort, string msg, Header.HeaderData headerData)
+        public void SendMessage(string destination_IP, int source_Port, int destination_Port, string msg, byte[] headerBytes)
         {
+            // Convert the message (string) to ASCII byte array
             byte[] messageBytes = Encoding.ASCII.GetBytes(msg);
-            byte[] headerBytes = new byte[2];
-            headerBytes[0] = headerData.type;
-            headerBytes[1] = headerData.msg;
 
+            // Create an array to hold only the flag, which is 1 byte
+            /*byte[] headerBytes = new byte[7];
+            headerBytes[0] = headerData.flag;  // Store the flag byte
+            headerBytes[1] = (byte)(headerData.sequence_number >> 8);  // High byte (most significant byte)
+            headerBytes[2] = (byte)(headerData.sequence_number & 0xFF); // Low byte (least significant byte)
+            headerBytes[3] = (byte)(headerData.acknowledgment_number >> 8);  // High byte (most significant byte)
+            headerBytes[4] = (byte)(headerData.acknowledgment_number & 0xFF); // Low byte (least significant byte)
+            headerBytes[5] = (byte)(headerData.checksum >> 8);  // High byte (most significant byte)
+            headerBytes[6] = (byte)(headerData.checksum & 0xFF); // Low byte (least significant byte)*/
+
+            // Create the final byte array to send, with enough space for the flag and the message
             byte[] dataToSend = new byte[headerBytes.Length + messageBytes.Length];
-            Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length); 
-            Buffer.BlockCopy(messageBytes, 0, dataToSend, headerBytes.Length, messageBytes.Length); 
 
+            // Copy the flag and the message into the final byte array
+            Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length); 
+            Buffer.BlockCopy(messageBytes, 0, dataToSend, headerBytes.Length, messageBytes.Length);
+
+            
             using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
             {
-                IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, localPort);
+                IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, source_Port);
                 sock.Bind(localEndPoint);
 
-                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(udpIP), remotePort);
+                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
 
                 sock.SendTo(dataToSend, remoteEndPoint);
+                if(msg != "exit" && msg != "KEEP_Alive"){
+                    Console.WriteLine($"Sent message from port {source_Port} to {destination_IP} with port {destination_Port} : {msg}");
+                }
 
-                Console.WriteLine($"Sent message from port {localPort} to {udpIP} : {remotePort} {msg}");
+                /*if (msg == "KEEP_Alive")
+                {
+                    Console.WriteLine("Keep alive message sent");
+                }*/
+
             }
         }
 

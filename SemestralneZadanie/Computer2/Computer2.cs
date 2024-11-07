@@ -11,128 +11,47 @@ namespace Computer2
 {
     class Program
     {
-        private static UDP_client udpClient = new UDP_client();
-        private static UDP_server udpServer = new UDP_server();
-        //private static string udpIP = "10.10.77.21"; // Change as needed
-        private static string destination_ip;
-        private static string source_ip = "192.168.1.2";
-        private static int destination_port;
-        private static int source_port;
-        private static string message;
-        public static bool isRunning;
-        private static Header.HeaderData header = new Header.HeaderData();
-        public static bool SYN = false;
-        public static bool SYN_ACK = false;
-        public static bool ACK = false;
+        public static byte flag;
+        public static byte type;
+        public static byte msg;
+        public ushort sequence_number;
+        public ushort acknowledgment_number;
+        public ushort checksum;
 
+        // Constants for message types
+        public const byte MSG_NONE = 0b0000; // Žiadne dáta (napr. Keep-alive)
+        public const byte MSG_TEXT = 0b0001; // Text (obyčajná textová správa)
+        public const byte MSG_FILE = 0b0010; // Súbor
 
+        // Constants for header states
+        public const byte SYN = 0b0000; // Inicializácia spojenia
+        public const byte AUTH = 0b0001; // Autentifikácia
+        public const byte SYN_ACK = 0b0010; // Potvrdenie spojenia
+        public const byte ACK = 0b0011; // Potvrdenie prijatia
+        public const byte DATA = 0b0100; // Odoslané dáta
+        public const byte FIN = 0b0101; // Ukončenie spojenia
+        public const byte FIN_ACK = 0b0110; // Potvrdenie ukončenia spojenia
+        public const byte KEEP_ALIVE = 0b1000; // Keep-alive informácia
+        public const byte NACK = 0b1001; // Negatívne potvrdenie
+        public const byte LAST_FRAGMENT = 0b1111; // Posledný fragment
+        public const byte TEST = 0b1011; //For testing purposes only
         static void Main(string[] args)
-        {
-            Console.WriteLine("Enter destination IP address:");
-            destination_ip = Console.ReadLine();
-            
-            Console.WriteLine("Enter destination port:");
-            string input = Console.ReadLine();
-            destination_port = int.Parse(input);
-            
-            Console.WriteLine("Enter source port:");
-            input = Console.ReadLine();
-            source_port = int.Parse(input);
-            
-            Console.WriteLine("Press enter if both devices are ready to be connected");
-            Console.ReadLine();
-            
-            isRunning = true;
-            
-            Thread sendThread = new Thread(() => send_thread(destination_ip, destination_port));
-            sendThread.Start();
+        {   
+            type = MSG_TEXT;
+            msg = ACK;
+            flag = (byte)((type << 4) | msg);
+            Console.Write("Nastaveny flag: ");
+            Console.WriteLine(Convert.ToString(flag, 2).PadLeft(8, '0')); // Výsledok ako binárny reťazec
+        
 
-            Thread receiveThread = new Thread(() => receive_thread(source_ip, source_port));
-            receiveThread.Start();
+
+
             
-            //Console.WriteLine("Press enter to exit");
-            //Console.ReadLine();
-
-            //isRunning = false;
-            
-            sendThread.Join();
-            receiveThread.Join();
-            
-
-        }
-
-        public static void send_thread(string destination_ip, int destination_port)
-        {
-            header.SetType(Header.HeaderData.SYN);
-            header.SetMsg(Header.HeaderData.MSG_NONE);
-
-            // Send initial SYN message
-            udpClient.send_message(destination_ip, destination_port, "SYN", header);
-            
-
-            // Wait for SYN-ACK
-            do
-            {
-                Console.WriteLine("Waiting for SYN ACK");
-                Thread.Sleep(500);
-            } while (!SYN_ACK);
-
-            // Send ACK after receiving SYN-ACK
-            udpClient.send_message(destination_ip, destination_port, "ACK", header);
-            
-
-            if (ACK && SYN_ACK && SYN)
-            {
-                // Message sending loop
-                while (isRunning)
-                {
-                    Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
-                    message = Console.ReadLine();
-                    if (message == "exit")
-                    {
-                        isRunning = false;
-                        continue;
-                    }
-
-                    // Send the actual message
-                    udpClient.send_message(destination_ip, destination_port, message, header);
-                }
-            }
-        }
-
-        public static void receive_thread(string source_ip, int source_port)
-        {
-            udpServer.Start(source_ip, source_port);
         }
     }
-
-
-
-
-    /*Console.Write("Do you want to send or receive messages? (s/r)");
-            string input = Console.ReadLine();
-
-            if (input == "s")
-            {
-                Thread sendThread = new Thread(() => send_thread(udpIP, port_send, message));
-                sendThread.Start();
-                //send_thread(udpIP, port_send, message);
-            }
-
-            if (input == "r")
-            {
-                Thread receiveThread = new Thread(() => receive_thread(udpIP, port_listen));
-                receiveThread.Start();
-            }*/
 }
-/*// Start the receive thread
-            Thread receiveThread = new Thread(() => receive_thread(receive_ip, port_listen));
-            receiveThread.Start();
 
-            // Start the send thread
-            Thread sendThread = new Thread(() => send_thread(send_ip, port_send, message));
-            sendThread.Start();
+          
 
-            // Wait for threads to finish (in this case, they won't unless stopped)
-            sendThread.Join();
-            receiveThread.Join();*/
+
+   

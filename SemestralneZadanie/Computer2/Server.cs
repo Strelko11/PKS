@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-public class UDP_server
+/*public class UDP_server
 {
     private bool running = true;
     public byte type;
@@ -64,4 +64,4 @@ public class UDP_server
 
         // You can also handle the message content based on msgState here if needed.
     }
-}
+}*/

@@ -1,4 +1,4 @@
-﻿﻿using System.Data;
+﻿using System.Data;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
@@ -34,7 +34,10 @@ namespace Computer1
         public static bool message_ACK = true;
         public static bool message_ACK_sent = false;
         public static bool message_sent = false;
-
+        public static System.Timers.Timer hearbeatTimer;
+        public static int hearBeat_count = 0;
+        public static bool keep_alive_sent = false;
+        public static byte[] headerBytes /*= new byte[7]*/;
         static int Main(string[] args)
         {
             //Console.WriteLine("Enter source IP address:");
@@ -110,8 +113,16 @@ namespace Computer1
                 Console.WriteLine("Waiting for the other device to initiate the handshake...");
             }
 
+            if (handshake_complete && iniciator)
+            {
+                hearbeatTimer = new System.Timers.Timer(5000);  // 5000 milliseconds (5 seconds)
+                hearbeatTimer.Elapsed += OnHeartBeat;  // Subscribe to the Elapsed event
+                hearbeatTimer.AutoReset = true;  // Make the timer repeat
+                hearbeatTimer.Enabled = true;  // Start the timer
 
+            }
 
+            
             
 
             //Console.WriteLine("Press enter to exit");
@@ -132,19 +143,36 @@ namespace Computer1
             if (iniciator)
             {
                 Console.WriteLine("SYN packet sent");
+                //Thread.Sleep(5000);
                 while (!SYN_ACK)
                 {
-                    header.SetType(Header.HeaderData.SYN);
-                    header.SetMsg(Header.HeaderData.MSG_NONE);
-                    udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, "SYN", header);
+                    //header.SetType(Header.HeaderData.SYN);
+                    //header.SetMsg(Header.HeaderData.MSG_NONE);
+                    //Console.WriteLine("posielam Syn");
+                    header.setFlag(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN);
+                    header.sequence_number = 0;
+                    header.acknowledgment_number = 0;
+                    header.checksum = 0;
+                    // Convert to byte array
+                    headerBytes = header.ToByteArray();
+                    udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, "SYN", headerBytes);
                     //Console.WriteLine("SYN packet sent. Waiting for SYN_ACK...");
+                    //Thread.Sleep(2000);
                 }
-                header.SetType(Header.HeaderData.ACK);
-                header.SetMsg(Header.HeaderData.MSG_NONE);
-                udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, "ACK", header);
+                //header.SetType(Header.HeaderData.ACK);
+                //header.SetMsg(Header.HeaderData.MSG_NONE);
+                header.setFlag(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK);
+                header.sequence_number = 0;
+                header.acknowledgment_number = 0;
+                header.checksum = 0;
+                // Convert to byte array
+                headerBytes = header.ToByteArray();
+                udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, "ACK", headerBytes);
                 Console.WriteLine("Handshake complete!");
                 handshake_complete = true;
-                Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n\n");
+                Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n");
+                //Thread keepAlive = new Thread(() => keep_alive_thread(destination_ip, destination_listening_port));
+                //keepAlive.Start();
             }
 
         }
@@ -152,34 +180,64 @@ namespace Computer1
 
         public static void send_thread(string destination_ip, int destination_listening_port)
         {
-
+            
             // header.SetType(Header.HeaderData.TEST);
-            // header.SetMsg(Header.HeaderData.MSG_NONE);
+            // header.SetMsg(Header.HeaderDataMSG_NONE);
             // udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, header);
 
             while (isRunning)
             {
                 if (handshake_complete && message_ACK)
                 {
-                    Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
-                    message = Console.ReadLine();
-                    if (message == "exit")
+                    Console.WriteLine("********************************************************");
+                    Console.WriteLine("Choose an operation(m,f,q)");
+                    string command = Console.ReadLine();
+                    if (command == "q")
                     {
-                        header.SetType(Header.HeaderData.TEST);
-                        header.SetMsg(Header.HeaderData.MSG_NONE);
-                        udpClient.SendMessage(source_ip, source_sending_port, source_listening_port, message, header);
+                        //header.SetType(Header.HeaderData.TEST);
+                        //header.SetMsg(Header.HeaderData.MSG_NONE);
+                        header.setFlag(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA);
+                        header.sequence_number = 0;
+                        header.acknowledgment_number = 0;
+                        header.checksum = 0;
+                        // Convert to byte array
+                        headerBytes = header.ToByteArray();
+                        udpClient.SendMessage(source_ip, source_sending_port, source_listening_port, "exit", headerBytes);
                         isRunning = false;
                         continue;
                     }
 
-                    header.SetType(Header.HeaderData.TEST);
-                    header.SetMsg(Header.HeaderData.MSG_NONE);
-                    message_ACK = false;
-                    message_sent = true;
-                    udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, header);
-                    Console.WriteLine("Waiting for ACK");
+                    if (command == "m")
+                    {   
+                        Console.WriteLine("Type message:");
+                        message = Console.ReadLine();
+                        //header.SetType(Header.HeaderData.TEST);
+                        //header.SetMsg(Header.HeaderData.MSG_NONE);
+                        header.setFlag(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA);
+                        message_ACK = false;
+                        message_sent = true;
+                        header.sequence_number = 0;
+                        header.acknowledgment_number = 0;
+                        header.checksum = 0;
+                        // Convert to byte array
+                        byte[] headerBytes = header.ToByteArray();
+                        udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, headerBytes);
+                        Console.WriteLine("Waiting for ACK");
+                        if (iniciator)
+                        {
+                            ResetHeartBeatTimer();
+                        }
+                    }
+
+                    if (command == "f")
+                    {
+                        Console.WriteLine("Sending files");
+                    }
+
+                    
                     
                 }
+                
             }
             //Console.WriteLine("Exited program");
         }
@@ -190,12 +248,53 @@ namespace Computer1
         {
             //while (isRunning)
             //{
-                header.SetType(Header.HeaderData.TEST);
+                //header.SetType(Header.HeaderData.TEST);
                 udpServer.Start(source_ip, source_port);
+                if (iniciator)
+                {
+                    ResetHeartBeatTimer();
+                }
             //}
             //Console.WriteLine("Exited receive thread");
 
         }
+
+        private static void OnHeartBeat(object sender, ElapsedEventArgs e)
+        {
+            if (hearBeat_count >= 3)
+            {
+                Console.WriteLine("Connection lost");
+                return;
+            }
+            //header.SetType(Header.HeaderData.KEEP_ALIVE);
+            //header.SetMsg(Header.HeaderData.MSG_NONE);
+            //Console.WriteLine($"Hearbeat count: {hearBeat_count}");
+            header.setFlag(Header.HeaderData.MSG_NONE, Header.HeaderData.KEEP_ALIVE);
+            header.sequence_number = 0;
+            header.acknowledgment_number = 0;
+            header.checksum = 0;
+            // Convert to byte array
+            byte[] headerBytes = header.ToByteArray();
+            udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, "KEEP_Alive", headerBytes);
+            //Console.WriteLine("********************************************************");
+            //Console.WriteLine("Choose an operation(m,f,q)");
+            keep_alive_sent = true;
+            hearBeat_count++;
+            
+        }
+
+        private static void ResetHeartBeatTimer()
+        {
+            if (isRunning)
+            {
+                hearbeatTimer.Stop();
+                hearbeatTimer.Start();
+            }
+            
+        }
+
+        
+        
 
     }
 

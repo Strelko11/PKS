@@ -16,11 +16,11 @@ public class UDP_server
         this.client = client;
     }
 
-    public void Start(string udpIP, int udpPort)
+    public void Start(string source_IP, int source_Port)
     {
         using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
         {
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(udpIP), udpPort);
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(source_IP), source_Port);
             sock.Bind(endPoint);
             //Console.WriteLine("Listening for connections on " + udpIP + ":" + udpPort);
 
@@ -30,22 +30,34 @@ public class UDP_server
             {
                 EndPoint senderEndPoint = new IPEndPoint(IPAddress.Any, 0);
                 int bytesReceived = sock.ReceiveFrom(buffer, ref senderEndPoint);
-                byte type = buffer[0]; 
-                byte msgState = buffer[1]; 
-                receivedMessage = Encoding.ASCII.GetString(buffer, 2, bytesReceived - 2);
+                //byte type = buffer[0]; 
+                //byte msgState = buffer[1];
+                byte flag = buffer[0];
+                byte type_flag = (byte)((flag >> 4) & 0b1111); 
+                byte msg_flag = (byte)(flag & 0b1111);   
+                byte[] sequence_number = new byte[2];
+                sequence_number[0] = buffer[1];
+                sequence_number[1] = buffer[2];
+                byte[] acknowledgement_number = new byte[2];
+                acknowledgement_number[0] = buffer[3];
+                acknowledgement_number[1] = buffer[4];
+                byte[] checksum = new byte[2];
+                checksum[0] = buffer[5];
+                checksum[1] = buffer[6];
+                receivedMessage = Encoding.ASCII.GetString(buffer, 7, bytesReceived - 7);//TODO: Zmenit accordingly k dlzke celej hlavicky
                 
                 if(receivedMessage == "exit"){
+                    //Console.WriteLine("Exiting");
                     break;
                 }
-                Console.WriteLine(
-                    "Received message " + receivedMessage);
-                Program.message_received = true;
-                if(Program.handshake_complete && /*!Program.message_ACK_sent &&*/ type != Header.HeaderData.ACK){
-                    ACK_message();
+                else
+                {
+                    Console.WriteLine(
+                        "Received message " + receivedMessage +" "+ type_flag +" "+ msg_flag);
+                    Program.message_received = true;
+               
+                    ProcessMessageFlag(type_flag, msg_flag);
                 }
-                //Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
-                ProcessMessage(type);
-                
                 
                 
             }
@@ -54,67 +66,118 @@ public class UDP_server
         //Console.WriteLine("Exited receive thread");
     }
 
-    
-
-    public void ProcessMessage(byte receivedType)
+    public void ProcessMessageFlag(byte type_flag, byte msg_flag)
     {
-        switch (receivedType)
+        switch (type_flag)
         {
-            case 0x00:
-                //Console.WriteLine("SYN packet received");
-                Program.SYN = true; 
-                //Console.WriteLine($"SYN state: {Program.SYN}");
+            case 0b0000:
+                Console.WriteLine("Servisna sprava");
+                ProcessServiceMessages(msg_flag);
+                break;
+            case 0b0001:
+                Console.WriteLine("Textova sprava");
+                ProcessTextMessage(msg_flag);
+                break;
+            case 0b0010:
+                Console.WriteLine("Subor");
+                break;
+        }
+    }
+
+    public void ProcessServiceMessages(byte msg_flag)
+    {
+        switch (msg_flag)
+        {
+            case 0b0000:
+                Program.SYN = true;
                 RespondToSYN();
                 break;
-
-            case 0x02:
-                //Console.WriteLine("SYN_ACK packet received");
-                Program.SYN_ACK = true; 
-                //Console.WriteLine($"SYN_ACK state: {Program.SYN_ACK}");
+            case 0b0010:
+                Program.SYN_ACK = true;
+                //Console.WriteLine("Tu som sa dostal");
                 break;
-
-            case 0x03:
-                //Console.WriteLine("ACK packet received");
+            case 0b0011:
                 if(!Program.handshake_complete){
                     Program.handshake_ACK = true; 
                     Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n\n");
                     Program.handshake_complete = true;
                 }
                 else{
-                    Thread.Sleep(1000);
+                    //Thread.Sleep(1000);
                     Program.message_ACK = true;
                     //Console.WriteLine("Sent ACK packet for message");
-                    
                 }
-                
-                //Console.WriteLine($"ACK state: {Program.ACK}");
-                break;
 
-            default:
-                //Console.WriteLine("Message received");
+                if (Program.keep_alive_sent)
+                {
+                    Program.keep_alive_sent = false;
+                    Program.hearBeat_count--;
+                }
+                break;
+            case 0b1000:
+                ACK_message();
                 break;
         }
     }
+
+
+    public void ProcessTextMessage(byte msg_flag)
+    {
+        switch (msg_flag)
+        {
+            case 0b0100:
+                Console.WriteLine("Sprava bola prijata. Odosielam potvrdenie");
+                ACK_message();
+                break;
+            default:
+                Console.WriteLine("Neznamy typ spravy");
+                break;
+        }
+    }
+
+    public void ProccesFileMessage(byte msg_flag)
+    {
+        Console.WriteLine("Zatial len testovanie");
+    }
+
+    
 
     private void RespondToSYN()
     {
         Console.WriteLine("Sending SYN-ACK in response to SYN...");
         Header.HeaderData responseHeader = new Header.HeaderData();
-        responseHeader.SetType(Header.HeaderData.SYN_ACK);
-        responseHeader.SetMsg(Header.HeaderData.MSG_NONE); 
-        client.SendMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, "SYN_ACK", responseHeader);
+        responseHeader.setFlag(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN_ACK);
+        //Console.WriteLine($"Data nastavene na {Header.HeaderData.MSG_NONE} + {Header.HeaderData.SYN_ACK}");
+        //responseHeader.SetType(Header.HeaderData.SYN_ACK);
+        //responseHeader.SetMsg(Header.HeaderData.MSG_NONE); 
+        responseHeader.sequence_number = 0;
+        responseHeader.acknowledgment_number = 0;
+        responseHeader.checksum = 0;
+        // Convert to byte array
+        byte[] headerBytes = responseHeader.ToByteArray();
+        client.SendMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, "SYN_ACK", headerBytes);
+        //Thread.Sleep(2000);
     }
 
     private void ACK_message(){
         Console.WriteLine("Sent ACK for received message");
         Header.HeaderData responseHeader = new Header.HeaderData();
-        responseHeader.SetType(Header.HeaderData.ACK);
-        responseHeader.SetMsg(Header.HeaderData.MSG_NONE);
-        client.SendMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, "ACK", responseHeader);
+        responseHeader.setFlag(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK);
+        //responseHeader.SetType(Header.HeaderData.ACK);
+        //responseHeader.SetMsg(Header.HeaderData.MSG_NONE);
+        responseHeader.sequence_number = 0;
+        responseHeader.acknowledgment_number = 0;
+        responseHeader.checksum = 0;
+        // Convert to byte array
+        byte[] headerBytes = responseHeader.ToByteArray();
+        client.SendMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, "ACK", headerBytes);
         Program.message_ACK_sent = true;
-        Console.WriteLine("Enter message you want to send (type 'exit' to quit):");
+        Console.WriteLine("********************************************************");
+        Console.WriteLine("Choose an operation(m,f,q)");
 
     }
+
+   
 
 }
 
@@ -187,4 +250,58 @@ public class UDP_server
             Console.WriteLine("Unknown header type.");
             break;
     }
+}*/
+/*public void ProcessMessage(byte receivedType)
+    {
+        switch (receivedType)
+        {
+            case 0x00:
+                //Console.WriteLine("SYN packet received");
+                Program.SYN = true;
+                //Console.WriteLine($"SYN state: {Program.SYN}");
+                RespondToSYN();
+                break;
+
+            case 0x02:
+                //Console.WriteLine("SYN_ACK packet received");
+                Program.SYN_ACK = true;
+                //Console.WriteLine($"SYN_ACK state: {Program.SYN_ACK}");
+                break;
+
+            case 0x03:
+                //Console.WriteLine("ACK packet received");
+                if(!Program.handshake_complete){
+                    Program.handshake_ACK = true;
+                    Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n\n");
+                    Program.handshake_complete = true;
+                }
+                else{
+                    //Thread.Sleep(1000);
+                    Program.message_ACK = true;
+                    //Console.WriteLine("Sent ACK packet for message");
+                }
+
+                if (Program.keep_alive_sent)
+                {
+                    Program.keep_alive_sent = false;
+                    Program.hearBeat_count--;
+                }
+
+                //Console.WriteLine($"ACK state: {Program.ACK}");
+                break;
+            case 0x08:
+                break;
+
+            default:
+                //Console.WriteLine("Message received");
+                break;
+        }
+    }*/
+    
+/*private void respondToKeepAlive()
+{
+   Header.HeaderData responseHeader = new Header.HeaderData();
+   responseHeader.SetType(Header.HeaderData.KEEP_ALIVE);
+   responseHeader.SetMsg(Header.HeaderData.MSG_NONE);
+   client.SendMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, "ACK", responseHeader);
 }*/
