@@ -7,6 +7,7 @@ using System.Threading;
 using System.Timers;
 using System.Threading.Tasks;
 using System.Diagnostics.Tracing;
+using System.Diagnostics;
 
 
 
@@ -38,6 +39,8 @@ namespace Computer1
         public static int hearBeat_count = 0;
         public static bool keep_alive_sent = false;
         public static byte[] headerBytes /*= new byte[7]*/;
+        public static Stopwatch stopwatch = new Stopwatch();
+
         static int Main(string[] args)
         {
             //Console.WriteLine("Enter source IP address:");
@@ -115,10 +118,10 @@ namespace Computer1
 
             if (handshake_complete && iniciator)
             {
-                hearbeatTimer = new System.Timers.Timer(5000);  // 5000 milliseconds (5 seconds)
-                hearbeatTimer.Elapsed += OnHeartBeat;  // Subscribe to the Elapsed event
-                hearbeatTimer.AutoReset = true;  // Make the timer repeat
-                hearbeatTimer.Enabled = true;  // Start the timer
+                //hearbeatTimer = new System.Timers.Timer(5000);  // 5000 milliseconds (5 seconds)
+                //hearbeatTimer.Elapsed += OnHeartBeat;  // Subscribe to the Elapsed event
+                //hearbeatTimer.AutoReset = true;  // Make the timer repeat
+                //hearbeatTimer.Enabled = true;  // Start the timer
 
             }
 
@@ -189,6 +192,8 @@ namespace Computer1
             {
                 if (handshake_complete && message_ACK)
                 {
+                    //stopwatch.Stop();
+                    
                     Console.WriteLine("********************************************************");
                     Console.WriteLine("Choose an operation(m,f,q)");
                     string command = Console.ReadLine();
@@ -220,18 +225,33 @@ namespace Computer1
                         header.acknowledgment_number = 0;
                         header.checksum = 0;
                         // Convert to byte array
-                        byte[] headerBytes = header.ToByteArray();
+                        headerBytes = header.ToByteArray();
+                        stopwatch.Restart();
+
                         udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, headerBytes);
                         Console.WriteLine("Waiting for ACK");
                         if (iniciator)
                         {
-                            ResetHeartBeatTimer();
+                            //ResetHeartBeatTimer();//TODO: Turned of for testing purposes
                         }
                     }
 
                     if (command == "f")
                     {
                         Console.WriteLine("Sending files");
+                        
+                        //Console.WriteLine("Enter the file path:");
+                        //string filePath = Console.ReadLine();
+                        header.sequence_number = 0;
+                        header.acknowledgment_number = 0;
+                        header.checksum = 0;
+                        header.setFlag(Header.HeaderData.MSG_FILE, Header.HeaderData.DATA);
+                        // Convert to byte array
+                        headerBytes = header.ToByteArray();
+                        string filePath = "/Users/macbook/Desktop/test.txt";
+                        //string content = File.ReadAllText(filePath);
+                        //Console.WriteLine(content);
+                        udpClient.SendFile(destination_ip,source_sending_port, destination_listening_port, headerBytes, filePath);
                     }
 
                     
@@ -250,9 +270,10 @@ namespace Computer1
             //{
                 //header.SetType(Header.HeaderData.TEST);
                 udpServer.Start(source_ip, source_port);
+               
                 if (iniciator)
                 {
-                    ResetHeartBeatTimer();
+                    //ResetHeartBeatTimer();//TODO: Turned of for testing purposes
                 }
             //}
             //Console.WriteLine("Exited receive thread");

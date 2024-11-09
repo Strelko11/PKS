@@ -18,18 +18,20 @@ public class UDP_server
 
     public void Start(string source_IP, int source_Port)
     {
-        using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
+        using (UdpClient udpClient = new UdpClient(source_Port))
         {
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(source_IP), source_Port);
-            sock.Bind(endPoint);
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, source_Port);
+            //sock.Bind(endPoint);
             //Console.WriteLine("Listening for connections on " + udpIP + ":" + udpPort);
 
-            byte[] buffer = new byte[1024];
+            //byte[] buffer = new byte[1024];
 
             while (Program.isRunning)
             {
-                EndPoint senderEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                int bytesReceived = sock.ReceiveFrom(buffer, ref senderEndPoint);
+                //IPEndPoint senderEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                //int bytesReceived = sock.ReceiveFrom(buffer, ref senderEndPoint);
+                byte[] buffer = udpClient.Receive(ref endPoint);
+
                 //byte type = buffer[0]; 
                 //byte msgState = buffer[1];
                 byte flag = buffer[0];
@@ -44,7 +46,7 @@ public class UDP_server
                 byte[] checksum = new byte[2];
                 checksum[0] = buffer[5];
                 checksum[1] = buffer[6];
-                receivedMessage = Encoding.ASCII.GetString(buffer, 7, bytesReceived - 7);//TODO: Zmenit accordingly k dlzke celej hlavicky
+                /*receivedMessage = Encoding.ASCII.GetString(buffer, 7, buffer.Length - 7);//TODO: Zmenit accordingly k dlzke celej hlavicky
                 
                 if(receivedMessage == "exit"){
                     //Console.WriteLine("Exiting");
@@ -57,7 +59,9 @@ public class UDP_server
                     Program.message_received = true;
                
                     ProcessMessageFlag(type_flag, msg_flag);
-                }
+                }*/
+                
+                ProcessMessageFlag(type_flag, msg_flag, buffer);
                 
                 
             }
@@ -66,7 +70,7 @@ public class UDP_server
         //Console.WriteLine("Exited receive thread");
     }
 
-    public void ProcessMessageFlag(byte type_flag, byte msg_flag)
+    public void ProcessMessageFlag(byte type_flag, byte msg_flag, byte[] buffer)
     {
         switch (type_flag)
         {
@@ -76,10 +80,18 @@ public class UDP_server
                 break;
             case 0b0001:
                 Console.WriteLine("Textova sprava");
-                ProcessTextMessage(msg_flag);
+                receivedMessage = Encoding.ASCII.GetString(buffer, 7, buffer.Length - 7);
+                if (receivedMessage != "exit")
+                {
+                    Console.WriteLine(
+                        "Received message " + receivedMessage +" "+ type_flag +" "+ msg_flag);
+                    Program.message_received = true;
+                    ProcessTextMessage(msg_flag);
+                }
                 break;
             case 0b0010:
                 Console.WriteLine("Subor");
+                ProccesFileMessage(buffer);
                 break;
         }
     }
@@ -97,6 +109,10 @@ public class UDP_server
                 //Console.WriteLine("Tu som sa dostal");
                 break;
             case 0b0011:
+                Program.stopwatch.Start();
+                TimeSpan timeElapsed = Program.stopwatch.Elapsed;
+
+                Console.WriteLine($"Time taken for message transmission and ACK: {timeElapsed.TotalMilliseconds} ms");
                 if(!Program.handshake_complete){
                     Program.handshake_ACK = true; 
                     Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n\n");
@@ -135,9 +151,25 @@ public class UDP_server
         }
     }
 
-    public void ProccesFileMessage(byte msg_flag)
+    public void ProccesFileMessage(byte[] buffer) 
     {
-        Console.WriteLine("Zatial len testovanie");
+        string filePath = "/Users/macbook/Desktop/received.txt";  // Define the file path where you want to save the received file
+        byte[] fileBytes = new byte[buffer.Length - 7];
+        Buffer.BlockCopy(buffer, 7, fileBytes, 0, fileBytes.Length);
+
+        // Save the received file data to a file
+        File.WriteAllBytes(filePath, fileBytes);
+        Console.WriteLine("File received and saved successfully to " + filePath);
+        FileInfo fileInfo = new FileInfo(filePath);
+
+        // Get the file size in bytes
+        long fileSizeInBytes = fileInfo.Length;
+
+        Console.WriteLine($"File Size: {fileSizeInBytes} bytes");
+        var receiveTime = DateTime.UtcNow;
+        Console.WriteLine($"File received at: {receiveTime.ToString("HH:mm:ss.fff")}");
+
+        
     }
 
     
@@ -176,9 +208,7 @@ public class UDP_server
         Console.WriteLine("Choose an operation(m,f,q)");
 
     }
-
-   
-
+    
 }
 
 
