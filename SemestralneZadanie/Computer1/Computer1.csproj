@@ -11,4 +11,8 @@
       <Compile Remove="Tester.cs" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="InvertedTomato.Crc" Version="1.4.1" />
+    </ItemGroup>
+
 </Project>

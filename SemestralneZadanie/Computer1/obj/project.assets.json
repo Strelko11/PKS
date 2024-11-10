@@ -1,11 +1,50 @@
 {
   "version": 3,
   "targets": {
-    "net8.0": {}
+    "net8.0": {
+      "InvertedTomato.Crc/1.4.1": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/InvertedTomato.Crc.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/InvertedTomato.Crc.dll": {
+            "related": ".xml"
+          }
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "InvertedTomato.Crc/1.4.1": {
+      "sha512": "MGezrXVao8LKzCBRI/5WwWfjRhii4CWc5Pq5r0HfB++33u9XjEYBDSFS8oJZESTOhI9Z5L2i2TvA1r2FXbqPSw==",
+      "type": "package",
+      "path": "invertedtomato.crc/1.4.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "invertedtomato.crc.1.4.1.nupkg.sha512",
+        "invertedtomato.crc.nuspec",
+        "lib/net7.0/InvertedTomato.Crc.dll",
+        "lib/net7.0/InvertedTomato.Crc.xml",
+        "lib/net8.0/InvertedTomato.Crc.dll",
+        "lib/net8.0/InvertedTomato.Crc.xml",
+        "lib/netstandard1.0/InvertedTomato.Crc.dll",
+        "lib/netstandard1.0/InvertedTomato.Crc.xml",
+        "lib/netstandard2.0/InvertedTomato.Crc.dll",
+        "lib/netstandard2.0/InvertedTomato.Crc.xml",
+        "lib/netstandard2.1/InvertedTomato.Crc.dll",
+        "lib/netstandard2.1/InvertedTomato.Crc.xml"
+      ]
+    }
+  },
   "projectFileDependencyGroups": {
-    "net8.0": []
+    "net8.0": [
+      "InvertedTomato.Crc >= 1.4.1"
+    ]
   },
   "packageFolders": {
     "/Users/macbook/.nuget/packages/": {}
@@ -48,6 +87,12 @@
     "frameworks": {
       "net8.0": {
         "targetAlias": "net8.0",
+        "dependencies": {
+          "InvertedTomato.Crc": {
+            "target": "Package",
+            "version": "[1.4.1, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",
@@ -67,5 +112,13 @@
         "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.403/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Error occurred while getting package vulnerability data: Access to the path '/Users/macbook/.local/share/NuGet/http-cache/670c1461c29885f9aa22c281d8b7da90845b38e4$ps:_api.nuget.org_v3_index.json/vuln_index.dat-new' is denied."
+    }
+  ]
 }

@@ -7,9 +7,10 @@ public class Header
         public byte flag;
         //public byte type;
         //public byte msg;
-        public ushort sequence_number;
-        public ushort acknowledgment_number;
+        public int sequence_number;
+        //public ushort acknowledgment_number;
         public ushort checksum;
+        public ushort payload_size;
         
         // Constants for message types
         public const byte MSG_NONE = 0b0000;     // Žiadne dáta (napr. Keep-alive)
@@ -59,25 +60,30 @@ public class Header
         public byte[] ToByteArray()
         {
             // 7-byte header
-            byte[] headerBytes = new byte[7];
+            byte[] headerBytes = new byte[8];
 
             // Set flag (combining type and msg into 1 byte)
             headerBytes[0] = flag;  // flag is already packed with type and msg
 
             // Split sequence_number (ushort) into two bytes
             //sequence_number = 0;
-            headerBytes[1] = (byte)(sequence_number >> 8);  // High byte
-            headerBytes[2] = (byte)(sequence_number & 0xFF); // Low byte
+            headerBytes[1] = (byte)(sequence_number >> 16);  // High byte
+            headerBytes[2] = (byte)(sequence_number >> 8); // Low byte
+            headerBytes[3] = (byte)(sequence_number);
+            
 
             // Split acknowledgment_number (ushort) into two bytes
             //acknowledgment_number = 0;
-            headerBytes[3] = (byte)(acknowledgment_number >> 8);  // High byte
-            headerBytes[4] = (byte)(acknowledgment_number & 0xFF); // Low byte
+            //headerBytes[3] = (byte)(acknowledgment_number >> 8);  // High byte
+            //headerBytes[4] = (byte)(acknowledgment_number & 0xFF); // Low byte
 
             // Split checksum (ushort) into two bytes
             //checksum = 0;
-            headerBytes[5] = (byte)(checksum >> 8);  // High byte
-            headerBytes[6] = (byte)(checksum & 0xFF); // Low byte
+            headerBytes[4] = (byte)(checksum >> 8);  // High byte
+            headerBytes[5] = (byte)(checksum & 0xFF); // Low byte
+            
+            headerBytes[6] = (byte)(payload_size >> 8);
+            headerBytes[7] = (byte)(payload_size & 0xFF);
 
             return headerBytes;
         }

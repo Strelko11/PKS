@@ -3,13 +3,19 @@ namespace Computer1;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using InvertedTomato.Crc;
 
 public class UDP_server
 {
 
     public byte type;
-    private  Client client;
+    private Client client;
     public string receivedMessage;
+    public int count = 0;
+    private CrcAlgorithm crc;
+    public uint combined_sequence_number;
+    public ushort combined_checksum;
+    public ushort combined_payload;
 
     public UDP_server(Client client)
     {
@@ -35,19 +41,27 @@ public class UDP_server
                 //byte type = buffer[0]; 
                 //byte msgState = buffer[1];
                 byte flag = buffer[0];
-                byte type_flag = (byte)((flag >> 4) & 0b1111); 
-                byte msg_flag = (byte)(flag & 0b1111);   
-                byte[] sequence_number = new byte[2];
+                byte type_flag = (byte)((flag >> 4) & 0b1111);
+                byte msg_flag = (byte)(flag & 0b1111);
+                byte[] sequence_number = new byte[3];
                 sequence_number[0] = buffer[1];
                 sequence_number[1] = buffer[2];
-                byte[] acknowledgement_number = new byte[2];
-                acknowledgement_number[0] = buffer[3];
-                acknowledgement_number[1] = buffer[4];
+                sequence_number[2] = buffer[3];
+                combined_sequence_number =
+                    (uint)(sequence_number[0] << 16 | sequence_number[1] << 8 | sequence_number[2]);
                 byte[] checksum = new byte[2];
-                checksum[0] = buffer[5];
-                checksum[1] = buffer[6];
+                checksum[0] = buffer[4];
+                checksum[1] = buffer[5];
+                combined_checksum = (ushort)( checksum[0] << 8 | checksum[1]);
+                byte[] payload_size = new byte[2];
+                payload_size[0] = buffer[6];
+                payload_size[1] = buffer[7];
+                combined_payload = (ushort)(payload_size[0] << 8 | payload_size[1]);
+                Console.WriteLine($"Sequence number: {combined_sequence_number}");
+                Console.WriteLine($"Checksum: {combined_checksum:X4}"); // Print checksum in hexadecimal format
+                Console.WriteLine($"Payload size: {combined_payload}");
                 /*receivedMessage = Encoding.ASCII.GetString(buffer, 7, buffer.Length - 7);//TODO: Zmenit accordingly k dlzke celej hlavicky
-                
+
                 if(receivedMessage == "exit"){
                     //Console.WriteLine("Exiting");
                     break;
@@ -57,20 +71,20 @@ public class UDP_server
                     Console.WriteLine(
                         "Received message " + receivedMessage +" "+ type_flag +" "+ msg_flag);
                     Program.message_received = true;
-               
+
                     ProcessMessageFlag(type_flag, msg_flag);
                 }*/
-                
-                ProcessMessageFlag(type_flag, msg_flag, buffer);
-                
-                
+
+                ProcessMessageFlag(type_flag, msg_flag, buffer, combined_payload);
+
+
             }
             //Console.WriteLine("Exited while");
         }
         //Console.WriteLine("Exited receive thread");
     }
 
-    public void ProcessMessageFlag(byte type_flag, byte msg_flag, byte[] buffer)
+    public void ProcessMessageFlag(byte type_flag, byte msg_flag, byte[] buffer, ushort payload_size)
     {
         switch (type_flag)
         {
@@ -80,18 +94,11 @@ public class UDP_server
                 break;
             case 0b0001:
                 Console.WriteLine("Textova sprava");
-                receivedMessage = Encoding.ASCII.GetString(buffer, 7, buffer.Length - 7);
-                if (receivedMessage != "exit")
-                {
-                    Console.WriteLine(
-                        "Received message " + receivedMessage +" "+ type_flag +" "+ msg_flag);
-                    Program.message_received = true;
-                    ProcessTextMessage(msg_flag);
-                }
+                ProcessTextMessage(msg_flag, buffer);
                 break;
             case 0b0010:
                 Console.WriteLine("Subor");
-                ProccesFileMessage(buffer);
+                ProcessFileMessage(buffer, payload_size);
                 break;
         }
     }
@@ -102,23 +109,25 @@ public class UDP_server
         {
             case 0b0000:
                 Program.SYN = true;
+                Console.WriteLine("Servisna sprava SYN");
                 RespondToSYN();
                 break;
             case 0b0010:
                 Program.SYN_ACK = true;
+                Console.WriteLine("Servisna sprava SYN_ACK");
+
                 //Console.WriteLine("Tu som sa dostal");
                 break;
             case 0b0011:
-                Program.stopwatch.Start();
-                TimeSpan timeElapsed = Program.stopwatch.Elapsed;
-
-                Console.WriteLine($"Time taken for message transmission and ACK: {timeElapsed.TotalMilliseconds} ms");
-                if(!Program.handshake_complete){
-                    Program.handshake_ACK = true; 
+                Console.WriteLine("Servisna sprava ACK");
+                if (!Program.handshake_complete)
+                {
+                    Program.handshake_ACK = true;
                     Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n\n");
                     Program.handshake_complete = true;
                 }
-                else{
+                else
+                {
                     //Thread.Sleep(1000);
                     Program.message_ACK = true;
                     //Console.WriteLine("Sent ACK packet for message");
@@ -129,20 +138,32 @@ public class UDP_server
                     Program.keep_alive_sent = false;
                     Program.hearBeat_count--;
                 }
+
                 break;
             case 0b1000:
+                Console.WriteLine("Servisna sprava KEEP_ALIVE");
                 ACK_message();
                 break;
         }
     }
 
 
-    public void ProcessTextMessage(byte msg_flag)
+    public void ProcessTextMessage(byte msg_flag, byte[] buffer)
     {
         switch (msg_flag)
         {
             case 0b0100:
                 Console.WriteLine("Sprava bola prijata. Odosielam potvrdenie");
+                receivedMessage = Encoding.ASCII.GetString(buffer, 8, buffer.Length - 8);
+                var receiveTime = DateTime.UtcNow;
+                Console.WriteLine($"Message received at: {receiveTime.ToString("HH:mm:ss.fff")}");
+                if (receivedMessage != "exit")
+                {
+                    Console.WriteLine(
+                        "Received message " + receivedMessage);
+                    Program.message_received = true;
+                }
+
                 ACK_message();
                 break;
             default:
@@ -151,30 +172,65 @@ public class UDP_server
         }
     }
 
-    public void ProccesFileMessage(byte[] buffer) 
+    public void ProcessFileMessage(byte[] buffer, ushort payload_size)
     {
-        string filePath = "/Users/macbook/Desktop/received.txt";  // Define the file path where you want to save the received file
-        byte[] fileBytes = new byte[buffer.Length - 7];
-        Buffer.BlockCopy(buffer, 7, fileBytes, 0, fileBytes.Length);
-
-        // Save the received file data to a file
-        File.WriteAllBytes(filePath, fileBytes);
-        Console.WriteLine("File received and saved successfully to " + filePath);
-        FileInfo fileInfo = new FileInfo(filePath);
-
-        // Get the file size in bytes
-        long fileSizeInBytes = fileInfo.Length;
-
-        Console.WriteLine($"File Size: {fileSizeInBytes} bytes");
-        var receiveTime = DateTime.UtcNow;
-        Console.WriteLine($"File received at: {receiveTime.ToString("HH:mm:ss.fff")}");
-
         
+       string filePath = "/Users/macbook/Desktop/received.txt";  // Define the file path where you want to save the received file
+       
+       
+
+        // Extract the file data (payload) from the buffer (assuming the first 6 bytes are the header)
+        byte[] fileBytes = new byte[payload_size];
+        Buffer.BlockCopy(buffer, 8, fileBytes, 0, fileBytes.Length);
+        var crc = CrcAlgorithm.CreateCrc16CcittFalse();
+        crc.Append(fileBytes);
+
+        Console.Write("CRC16 (current fragment): ");
+        Console.WriteLine(crc.ToHexString());
+        //Console.WriteLine(BitConverter.ToString(fileBytes).Replace("-", " "));  // Print buffer as hexadecimal
+
+        // Open the file in append mode to add the new data to the file
+        using (FileStream fs = new FileStream(filePath, FileMode.Append, FileAccess.Write))
+        {
+            // Append the incoming data (fragment) to the file
+            fs.Write(fileBytes, 0, fileBytes.Length);
+            
+        }
+
+        // Calculate the CRC incrementally for each packet received (update the CRC for the entire file)
+        
+        count++;  // Increment the fragment count
+
+        Console.WriteLine($"Received fragment and appended to the file. Fragment {count} received.");
+
+        // If all fragments are received (assuming 'count' is the total number of expected fragments)
+        if (count == 5)  // Change the '10' to the expected total number of fragments
+        {
+            Console.WriteLine("All fragments received. Final file information:");
+
+            // Finalize the file details (e.g., file size, receive time)
+            FileInfo fileInfo = new FileInfo(filePath);
+
+            // Get the file size in bytes
+            long fileSizeInBytes = fileInfo.Length;
+
+            Console.WriteLine($"File Size: {fileSizeInBytes} bytes");
+
+            var receiveTime = DateTime.UtcNow;
+            Console.WriteLine($"File received at: {receiveTime.ToString("HH:mm:ss.fff")}");
+
+            // Optionally, you can calculate the final CRC of the entire file
+            Console.Write("Final CRC16 of the entire file: ");
+            fileBytes = File.ReadAllBytes(filePath);
+            crc.Append(fileBytes);
+            Console.WriteLine(crc.ToHexString());
+        }
     }
 
-    
 
-    private void RespondToSYN()
+
+
+private void RespondToSYN()
     {
         Console.WriteLine("Sending SYN-ACK in response to SYN...");
         Header.HeaderData responseHeader = new Header.HeaderData();
@@ -183,7 +239,6 @@ public class UDP_server
         //responseHeader.SetType(Header.HeaderData.SYN_ACK);
         //responseHeader.SetMsg(Header.HeaderData.MSG_NONE); 
         responseHeader.sequence_number = 0;
-        responseHeader.acknowledgment_number = 0;
         responseHeader.checksum = 0;
         // Convert to byte array
         byte[] headerBytes = responseHeader.ToByteArray();
@@ -198,7 +253,6 @@ public class UDP_server
         //responseHeader.SetType(Header.HeaderData.ACK);
         //responseHeader.SetMsg(Header.HeaderData.MSG_NONE);
         responseHeader.sequence_number = 0;
-        responseHeader.acknowledgment_number = 0;
         responseHeader.checksum = 0;
         // Convert to byte array
         byte[] headerBytes = responseHeader.ToByteArray();
@@ -335,3 +389,24 @@ public class UDP_server
    responseHeader.SetMsg(Header.HeaderData.MSG_NONE);
    client.SendMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, "ACK", responseHeader);
 }*/
+/*string filePath = "/Users/macbook/Desktop/received.txt";  // Define the file path where you want to save the received file
+        byte[] fileBytes = new byte[buffer.Length - 6];
+        Buffer.BlockCopy(buffer, 6, fileBytes, 0, fileBytes.Length);
+        string receivedText = Encoding.ASCII.GetString(fileBytes);
+        Console.WriteLine(receivedText);  // Print the actual text received
+        crc = CrcAlgorithm.CreateCrc16CcittFalse();
+        crc.Append(fileBytes);
+
+        Console.Write("CRC16 (current fragment): ");
+        Console.WriteLine(crc.ToHexString());
+        // Save the received file data to a file
+        File.WriteAllBytes(filePath, fileBytes);
+        Console.WriteLine("File received and saved successfully to " + filePath);
+        FileInfo fileInfo = new FileInfo(filePath);
+
+        // Get the file size in bytes
+        long fileSizeInBytes = fileInfo.Length;
+
+        Console.WriteLine($"File Size: {fileSizeInBytes} bytes");
+        var receiveTime = DateTime.UtcNow;
+        Console.WriteLine($"File received at: {receiveTime.ToString("HH:mm:ss.fff")}");*/
