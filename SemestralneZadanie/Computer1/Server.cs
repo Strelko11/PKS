@@ -16,6 +16,11 @@ public class UDP_server
     public uint combined_sequence_number;
     public ushort combined_checksum;
     public ushort combined_payload;
+    public string file_name;
+    public string file_path = "/Users/macbook/Downloads/";
+    public byte[] file;
+    public List<byte[]> file_bytes = new List<byte[]>();
+    public byte[] fileBytes;
 
     public UDP_server(Client client)
     {
@@ -43,23 +48,7 @@ public class UDP_server
                 byte flag = buffer[0];
                 byte type_flag = (byte)((flag >> 4) & 0b1111);
                 byte msg_flag = (byte)(flag & 0b1111);
-                byte[] sequence_number = new byte[3];
-                sequence_number[0] = buffer[1];
-                sequence_number[1] = buffer[2];
-                sequence_number[2] = buffer[3];
-                combined_sequence_number =
-                    (uint)(sequence_number[0] << 16 | sequence_number[1] << 8 | sequence_number[2]);
-                byte[] checksum = new byte[2];
-                checksum[0] = buffer[4];
-                checksum[1] = buffer[5];
-                combined_checksum = (ushort)( checksum[0] << 8 | checksum[1]);
-                byte[] payload_size = new byte[2];
-                payload_size[0] = buffer[6];
-                payload_size[1] = buffer[7];
-                combined_payload = (ushort)(payload_size[0] << 8 | payload_size[1]);
-                Console.WriteLine($"Sequence number: {combined_sequence_number}");
-                Console.WriteLine($"Checksum: {combined_checksum:X4}"); // Print checksum in hexadecimal format
-                Console.WriteLine($"Payload size: {combined_payload}");
+                
                 /*receivedMessage = Encoding.ASCII.GetString(buffer, 7, buffer.Length - 7);//TODO: Zmenit accordingly k dlzke celej hlavicky
 
                 if(receivedMessage == "exit"){
@@ -98,7 +87,7 @@ public class UDP_server
                 break;
             case 0b0010:
                 Console.WriteLine("Subor");
-                ProcessFileMessage(buffer, payload_size);
+                ProcessFileMessage(buffer, payload_size, msg_flag);
                 break;
         }
     }
@@ -139,6 +128,11 @@ public class UDP_server
                     Program.hearBeat_count--;
                 }
 
+                if (!Client.ACK_file)
+                {
+                    Client.ACK_file = true;
+                }
+
                 break;
             case 0b1000:
                 Console.WriteLine("Servisna sprava KEEP_ALIVE");
@@ -172,65 +166,133 @@ public class UDP_server
         }
     }
 
-    public void ProcessFileMessage(byte[] buffer, ushort payload_size)
+    public void ProcessFileMessage(byte[] buffer, ushort payload_size, byte msg_flag)
     {
-        
-       string filePath = "/Users/macbook/Desktop/received.txt";  // Define the file path where you want to save the received file
-       
-       
-
-        // Extract the file data (payload) from the buffer (assuming the first 6 bytes are the header)
-        byte[] fileBytes = new byte[payload_size];
-        Buffer.BlockCopy(buffer, 8, fileBytes, 0, fileBytes.Length);
-        var crc = CrcAlgorithm.CreateCrc16CcittFalse();
-        crc.Append(fileBytes);
-
-        Console.Write("CRC16 (current fragment): ");
-        Console.WriteLine(crc.ToHexString());
-        //Console.WriteLine(BitConverter.ToString(fileBytes).Replace("-", " "));  // Print buffer as hexadecimal
-
-        // Open the file in append mode to add the new data to the file
-        using (FileStream fs = new FileStream(filePath, FileMode.Append, FileAccess.Write))
+        switch (msg_flag)
         {
-            // Append the incoming data (fragment) to the file
-            fs.Write(fileBytes, 0, fileBytes.Length);
-            
-        }
+            case 0b1011://File name
+                file_name = Encoding.ASCII.GetString(buffer, 8, buffer.Length - 8);
+                Console.WriteLine($"File name is : {file_name}");
+                file_path += file_name;
+                Console.WriteLine($"File path is : {file_path}");
+                if (File.Exists(file_path))
+                {
+                    File.Delete(file_path);
+                    Console.WriteLine("Deleted file at destination address");
+                }
 
-        // Calculate the CRC incrementally for each packet received (update the CRC for the entire file)
-        
-        count++;  // Increment the fragment count
-
-        Console.WriteLine($"Received fragment and appended to the file. Fragment {count} received.");
-
-        // If all fragments are received (assuming 'count' is the total number of expected fragments)
-        if (count == 5)  // Change the '10' to the expected total number of fragments
-        {
-            Console.WriteLine("All fragments received. Final file information:");
-
-            // Finalize the file details (e.g., file size, receive time)
-            FileInfo fileInfo = new FileInfo(filePath);
-
-            // Get the file size in bytes
-            long fileSizeInBytes = fileInfo.Length;
-
-            Console.WriteLine($"File Size: {fileSizeInBytes} bytes");
-
-            var receiveTime = DateTime.UtcNow;
-            Console.WriteLine($"File received at: {receiveTime.ToString("HH:mm:ss.fff")}");
-
-            // Optionally, you can calculate the final CRC of the entire file
-            Console.Write("Final CRC16 of the entire file: ");
-            fileBytes = File.ReadAllBytes(filePath);
+                byte[] sequence_number = new byte[3];
+                sequence_number[0] = buffer[1];
+                sequence_number[1] = buffer[2];
+                sequence_number[2] = buffer[3];
+                combined_sequence_number =
+                    (uint)(sequence_number[0] << 16 | sequence_number[1] << 8 | sequence_number[2]);
+                byte[] checksum = new byte[2];
+                checksum[0] = buffer[4];
+                checksum[1] = buffer[5];
+                combined_checksum = (ushort)( checksum[0] << 8 | checksum[1]);
+                byte[] data_size = new byte[2];
+                data_size[0] = buffer[6];
+                data_size[1] = buffer[7];
+                combined_payload = (ushort)(data_size[0] << 8 | data_size[1]);
+                Console.WriteLine($"Sequence number: {combined_sequence_number}");
+                Console.WriteLine($"Checksum: {combined_checksum:X4}"); // Print checksum in hexadecimal format
+                Console.WriteLine($"Payload size: {combined_payload}");
+                crc = CrcAlgorithm.CreateCrc16CcittFalse();
+                byte[] fileNameBytes = Encoding.ASCII.GetBytes(file_name); // Convert the file name to a byte array
+                crc.Append(fileNameBytes);
+                Console.WriteLine("Calculated CRC for file name: " + crc.ToHexString());
+                if (Convert.ToUInt16(crc.ToHexString(),16) == combined_checksum)
+                {
+                    Console.WriteLine("Checksum is EQUAL");
+                    Client.ACK_file = true;
+                    ACK_message();
+                }
+                else
+                {
+                    Console.WriteLine("Checksum is NOT EQUAL");
+                }
+                break;
+            case 0b0100:// Data
+                
+            // Extract the file data (payload) from the buffer (assuming the first 6 bytes are the header)
+            fileBytes = new byte[payload_size];
+            Buffer.BlockCopy(buffer, 8, fileBytes, 0, fileBytes.Length);
+            crc = CrcAlgorithm.CreateCrc16CcittFalse();
             crc.Append(fileBytes);
+
+            Console.Write("CRC16 (current fragment): ");
             Console.WriteLine(crc.ToHexString());
+            //Console.WriteLine(BitConverter.ToString(fileBytes).Replace("-", " "));  // Print buffer as hexadecimal
+
+            // Open the file in append mode to add the new data to the file
+            
+            file_bytes.Add(fileBytes);
+            // Calculate the CRC incrementally for each packet received (update the CRC for the entire file)
+
+            count++; // Increment the fragment count
+
+            Console.WriteLine($"Received fragment and appended to the file. Fragment {count} received.");
+            ACK_message();
+
+            // If all fragments are received (assuming 'count' is the total number of expected fragments)
+            
+                break;
+            case 0b1111://Last fragment
+                Console.WriteLine("All fragments received. Final file information:");
+                fileBytes = new byte[payload_size];
+                Buffer.BlockCopy(buffer, 8, fileBytes, 0, fileBytes.Length);
+                crc = CrcAlgorithm.CreateCrc16CcittFalse();
+                crc.Append(fileBytes);
+
+                Console.Write("CRC16 (current fragment): ");
+                Console.WriteLine(crc.ToHexString());
+                //Console.WriteLine(BitConverter.ToString(fileBytes).Replace("-", " "));  // Print buffer as hexadecimal
+
+                // Open the file in append mode to add the new data to the file
+            
+                file_bytes.Add(fileBytes);
+                // Calculate the CRC incrementally for each packet received (update the CRC for the entire file)
+
+                count++; // Increment the fragment count
+
+                Console.WriteLine($"Received fragment and appended to the file. Fragment {count} received.");
+                using (FileStream fs = new FileStream(file_path, FileMode.Create, FileAccess.Write))
+                {
+                    foreach (byte[] file_bytes in file_bytes)
+                    {
+                        fs.Write(file_bytes, 0, file_bytes.Length);
+                    }
+                }
+                FileInfo fileInfo = new FileInfo(file_path);
+                
+
+                // Get the file size in bytes
+                long fileSizeInBytes = fileInfo.Length;
+
+                Console.WriteLine($"File Size: {fileSizeInBytes} bytes");
+
+                var receiveTime = DateTime.UtcNow;
+                Console.WriteLine($"File received at: {receiveTime.ToString("HH:mm:ss.fff")}");
+
+                // Optionally, you can calculate the final CRC of the entire file
+                Console.Write($"Final CRC16 of the entire file {file_path}: ");
+                fileBytes = File.ReadAllBytes(file_path);
+                crc = CrcAlgorithm.CreateCrc16CcittFalse();
+                crc.Append(fileBytes);
+                Console.WriteLine(crc.ToHexString());
+                ACK_message();
+                break;
+            default:
+                Console.WriteLine("Neznamy typ pre subor");
+                break;
         }
     }
 
 
 
 
-private void RespondToSYN()
+    private void RespondToSYN()
     {
         Console.WriteLine("Sending SYN-ACK in response to SYN...");
         Header.HeaderData responseHeader = new Header.HeaderData();
@@ -261,6 +323,12 @@ private void RespondToSYN()
         Console.WriteLine("********************************************************");
         Console.WriteLine("Choose an operation(m,f,q)");
 
+    }
+
+    private void ACK_with_checksum()
+    {
+        Header.HeaderData responseHeader = new Header.HeaderData();
+        responseHeader.setFlag(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK);
     }
     
 }

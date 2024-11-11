@@ -16,7 +16,7 @@ namespace Computer1
 {
     class Program
     {
-        private static Client udpClient = new Client();
+        private static Client udpClient = new Client(udpServer);
         private static UDP_server udpServer = new UDP_server(udpClient);
         public static string destination_ip;
         private static string source_ip = "127.0.0.1";
@@ -42,6 +42,7 @@ namespace Computer1
         public static byte[] headerBytes /*= new byte[7]*/;
         public static Stopwatch stopwatch = new Stopwatch();
         public static ushort packet_size;
+        public static bool stop_wait_ACK = false;
 
         static int Main(string[] args)
         {
@@ -253,11 +254,12 @@ namespace Computer1
                         
                         //Console.WriteLine("Enter the file path:");
                         //string filePath = Console.ReadLine();
-                        header.sequence_number = 0;
-                        header.checksum = 0;
-                        header.setFlag(Header.HeaderData.MSG_FILE, Header.HeaderData.DATA);
+                        //header.sequence_number = 0;
+                        //header.checksum = 0;
+                        //header.setFlag(Header.HeaderData.MSG_FILE, Header.HeaderData.DATA);
                         // Convert to byte array
-                        headerBytes = header.ToByteArray();
+                        //headerBytes = header.ToByteArray();
+                        //string filePath = "/Users/macbook/Desktop/UI Strelec 2a.pdf";
                         string filePath = "/Users/macbook/Desktop/test.txt";
                         //string content = File.ReadAllText(filePath);
                         //Console.WriteLine(content);

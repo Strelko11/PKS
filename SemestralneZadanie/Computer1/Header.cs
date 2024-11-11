@@ -27,8 +27,8 @@ public class Header
         public const byte FIN_ACK = 0b0110;      // Potvrdenie ukončenia spojenia
         public const byte KEEP_ALIVE = 0b1000;   // Keep-alive informácia
         public const byte NACK = 0b1001;         // Negatívne potvrdenie
-        public const byte LAST_FRAGMENT = 0b1111; // Posledný fragment
-        public const byte TEST = 0b1011;         //For testing purposes only
+        public const byte LAST_FRAGMENT = 0b1111; //Posledný fragment
+        public const byte FILE_NAME = 0b1011;         //Pre prvy packet pri posielani suboru ktory posle nazov suboru
 
         
 
