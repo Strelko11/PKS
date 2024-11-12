@@ -19,18 +19,21 @@ namespace Computer1
         private CrcAlgorithm crc;
         private UDP_server udpServer;
         public static bool ACK_file = true;
+        public string crc_result;
 
         public Client(UDP_server udpServer)
         {
             this.udpServer = udpServer;
         }
-        public void SendMessage(string destination_IP, int source_Port, int destination_Port, string msg,
-            byte[] headerBytes)
+        public void SendMessage(string destination_IP, int source_Port, int destination_Port, string msg)
         {
             // Convert the message (string) to ASCII byte array
             byte[] messageBytes = Encoding.ASCII.GetBytes(msg);
 
-
+            /*header.sequence_number = 1;
+            header.payload_size = Convert.ToUInt16(messageBytes.Length);
+            header.checksum = 10;*/
+            headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA, 1, 0, 0);
             // Create the final byte array to send, with enough space for the flag and the message
             byte[] dataToSend = new byte[headerBytes.Length + messageBytes.Length];
 
@@ -81,15 +84,10 @@ namespace Computer1
             {
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
                 byte[] file_name = Encoding.ASCII.GetBytes(Path.GetFileName(filePath));
-                header.setFlag(Header.HeaderData.MSG_FILE, Header.HeaderData.FILE_NAME);
-                header.sequence_number = 1;
-                crc = CrcAlgorithm.CreateCrc16CcittFalse();
-                crc.Append(file_name);
-                header.checksum = Convert.ToUInt16(crc.ToHexString(), 16);
+                crc_result = checksum_counter(file_name,0);
                 Console.Write("CRC16 (current fragment): ");
                 Console.WriteLine(crc.ToHexString());
-                header.payload_size = 9;
-                headerBytes = header.ToByteArray();
+                headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE, Header.HeaderData.FILE_NAME,1,(ushort)file_name.Length,Convert.ToUInt16(crc_result,16));
 
                 byte[] dataToSend = new byte[headerBytes.Length + file_name.Length];
 
@@ -134,25 +132,27 @@ namespace Computer1
                     //Console.WriteLine(receivedText);  // Print the actual text received (excluding the header)
 
                     // Calculate CRC16 over the data part (excluding the header)
-                    crc = CrcAlgorithm.CreateCrc16CcittFalse();
-                    crc.Append(chunk, 8, currentChunkSize); // Append the data part of the chunk (without the header)
-
+                    
                     // Print the CRC16 for the chunk
                     Console.Write("CRC16 (current fragment): ");
-                    Console.WriteLine(crc.ToHexString());
-                    if (total_packets == 1 || i == total_packets - 1)
+                    crc_result = checksum_counter(chunk, 8);
+                    Console.WriteLine(crc_result);
+                    if (total_packets == 1 || i == total_packets)
                     {
-                        header.setFlag(Header.HeaderData.MSG_FILE, Header.HeaderData.LAST_FRAGMENT);
+                        //header.setFlag(Header.HeaderData.MSG_FILE, Header.HeaderData.LAST_FRAGMENT);
+                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.LAST_FRAGMENT,i,packet_size,Convert.ToUInt16(crc_result,16));
                     }
                     else
                     {
-                        header.setFlag(Header.HeaderData.MSG_FILE, Header.HeaderData.DATA);
+                        //header.setFlag(Header.HeaderData.MSG_FILE, Header.HeaderData.DATA);
+                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.DATA,i,packet_size,Convert.ToUInt16(crc_result,16));
+
                     }
 
-                    header.sequence_number = i;
-                    header.checksum = Convert.ToUInt16(crc.ToHexString(), 16);
-                    header.payload_size = Convert.ToUInt16(currentChunkSize);
-                    headerBytes = header.ToByteArray();
+                    //header.sequence_number = i;
+                    //header.checksum = Convert.ToUInt16(crc_result,16);
+                    //header.payload_size = Convert.ToUInt16(currentChunkSize);
+                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.LAST_FRAGMENT,i,packet_size,Convert.ToUInt16(crc_result,16));
 
                     Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
 
@@ -182,11 +182,8 @@ namespace Computer1
 
                 long fileSizeInBytes = fileInfo.Length;
                 byte[] final_crc = File.ReadAllBytes(filePath);
-                crc = CrcAlgorithm.CreateCrc16CcittFalse();
-                crc.Append(final_crc);
-                Console.Write("CRC16: ");
-                Console.WriteLine(crc.ToHexString());
-
+                crc_result = checksum_counter(final_crc,0);
+                Console.Write($"CRC16: {crc_result}");
                 Console.WriteLine($"File Size: {fileSizeInBytes} bytes");
             }
 
@@ -233,46 +230,21 @@ namespace Computer1
 
             }
         }
-        private byte[] WaitForAck(UdpClient udpClient, IPEndPoint remoteEndPoint)
+
+        public string checksum_counter(byte[] crc_bytes, int padding_bytes)
         {
-            int timeout = 5000; // Timeout in milliseconds
-            DateTime startTime = DateTime.Now;
-
-            while (true)
+            crc = CrcAlgorithm.CreateCrc16CcittFalse();
+            if (padding_bytes == 0)
             {
-                // Check if the timeout period has passed
-                if ((DateTime.Now - startTime).TotalMilliseconds > timeout)
-                {
-                    Console.WriteLine("Timeout waiting for ACK.");
-                    return null; // Timeout occurred, return null
-                }
-
-                // Check if data is available to be read
-                if (udpClient.Available > 0)
-                {
-                    byte[] receivedData = udpClient.Receive(ref remoteEndPoint);
-                    byte flag = receivedData[0];
-                    byte msg_flag = (byte)(flag & 0b1111); // Extract message flag
-
-                    // Check if it's an ACK message
-                    if (msg_flag == Header.HeaderData.ACK)
-                    {
-                        Console.WriteLine("Received ACK");
-                        return receivedData;
-                    }
-                    else
-                    {
-                        Console.WriteLine("Received non-ACK message.");
-                        return null; // Not an ACK, return null
-                    }
-                }
-
-                // Optional: Add a small delay to avoid 100% CPU usage in the loop
-                System.Threading.Thread.Sleep(10);
+                crc.Append(crc_bytes);
+                
             }
+            else
+            {
+                crc.Append(crc_bytes, padding_bytes,crc_bytes.Length - padding_bytes);
+            }
+            return crc.ToHexString();
         }
-
-
     }
 }
 /*public bool WaitFor_SYN(int udpPort, string udpIp)
@@ -397,3 +369,41 @@ namespace Computer1
                 Console.WriteLine($"Sent chunk {i + 1}/{totalChunks}");
             }
             Console.WriteLine("File sent successfully.");*/
+/*private byte[] WaitForAck(UdpClient udpClient, IPEndPoint remoteEndPoint)
+   {
+       int timeout = 5000; // Timeout in milliseconds
+       DateTime startTime = DateTime.Now;
+
+       while (true)
+       {
+           // Check if the timeout period has passed
+           if ((DateTime.Now - startTime).TotalMilliseconds > timeout)
+           {
+               Console.WriteLine("Timeout waiting for ACK.");
+               return null; // Timeout occurred, return null
+           }
+
+           // Check if data is available to be read
+           if (udpClient.Available > 0)
+           {
+               byte[] receivedData = udpClient.Receive(ref remoteEndPoint);
+               byte flag = receivedData[0];
+               byte msg_flag = (byte)(flag & 0b1111); // Extract message flag
+
+               // Check if it's an ACK message
+               if (msg_flag == Header.HeaderData.ACK)
+               {
+                   Console.WriteLine("Received ACK");
+                   return receivedData;
+               }
+               else
+               {
+                   Console.WriteLine("Received non-ACK message.");
+                   return null; // Not an ACK, return null
+               }
+           }
+
+           // Optional: Add a small delay to avoid 100% CPU usage in the loop
+           System.Threading.Thread.Sleep(10);
+       }
+   }*/            

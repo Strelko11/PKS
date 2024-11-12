@@ -57,19 +57,20 @@ public class Header
             }
             return flag;
         }
-        public byte[] ToByteArray()
+        public byte[] ToByteArray(byte type,byte msg, int sequenceNumber, ushort payloadSize, ushort checksum)
         {
             // 7-byte header
             byte[] headerBytes = new byte[8];
+            flag = (byte)((type << 4) | msg);
 
             // Set flag (combining type and msg into 1 byte)
             headerBytes[0] = flag;  // flag is already packed with type and msg
 
             // Split sequence_number (ushort) into two bytes
             //sequence_number = 0;
-            headerBytes[1] = (byte)(sequence_number >> 16);  // High byte
-            headerBytes[2] = (byte)(sequence_number >> 8); // Low byte
-            headerBytes[3] = (byte)(sequence_number);
+            headerBytes[1] = (byte)(sequenceNumber >> 16);  // High byte
+            headerBytes[2] = (byte)(sequenceNumber >> 8); // Low byte
+            headerBytes[3] = (byte)(sequenceNumber);
             
 
             // Split acknowledgment_number (ushort) into two bytes
@@ -82,8 +83,8 @@ public class Header
             headerBytes[4] = (byte)(checksum >> 8);  // High byte
             headerBytes[5] = (byte)(checksum & 0xFF); // Low byte
             
-            headerBytes[6] = (byte)(payload_size >> 8);
-            headerBytes[7] = (byte)(payload_size & 0xFF);
+            headerBytes[6] = (byte)(payloadSize >> 8);
+            headerBytes[7] = (byte)(payloadSize & 0xFF);
 
             return headerBytes;
         }
