@@ -18,141 +18,201 @@ namespace Computer1
         public static byte[] chunk;
         private CrcAlgorithm crc;
         private UDP_server udpServer;
-        public static bool ACK_file = true;
+        public static bool ACK_file = false;
+        public static bool NACK_file = false;
         public string crc_result;
+        public static  bool file_sent = false;
 
         public Client(UDP_server udpServer)
         {
             this.udpServer = udpServer;
         }
-        public void SendMessage(string destination_IP, int source_Port, int destination_Port, string msg)
+        public void SendMessage(string destination_IP, int source_Port, int destination_Port,ushort packet_size, string msg, bool mistake)
         {
-            // Convert the message (string) to ASCII byte array
-            byte[] messageBytes = Encoding.ASCII.GetBytes(msg);
-
-            /*header.sequence_number = 1;
-            header.payload_size = Convert.ToUInt16(messageBytes.Length);
-            header.checksum = 10;*/
-            headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA, 1, 0, 0);
-            // Create the final byte array to send, with enough space for the flag and the message
-            byte[] dataToSend = new byte[headerBytes.Length + messageBytes.Length];
-
-            // Copy the flag and the message into the final byte array
-            Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
-            Buffer.BlockCopy(messageBytes, 0, dataToSend, headerBytes.Length, messageBytes.Length);
-
-
+            byte[] messageBytes = Encoding.UTF8.GetBytes(msg);
             using (UdpClient udpClient = new UdpClient(source_Port))
             {
-                /* IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, source_Port);
-                 sock.Bind(localEndPoint);
-
-                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
-
-                 sock.SendTo(dataToSend, remoteEndPoint);*/
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
+                if (messageBytes.Length < packet_size)
+                {
+                    // Calculate initial CRC and prepare message
+                    crc_result = checksum_counter(messageBytes, 0);
+                    if (mistake)
+                    {
+                        UInt16 crcValue = Convert.ToUInt16(crc_result, 16);
+                        crcValue += 1;
+                        crc_result = crcValue.ToString("X");
+                    }
 
-                // Send the data
-                udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
+                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.LAST_FRAGMENT, 1, Convert.ToUInt16(crc_result, 16));
 
+                    // Create the final byte array to send
+                    byte[] dataToSend = new byte[headerBytes.Length + messageBytes.Length];
+                    Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
+                    Buffer.BlockCopy(messageBytes, 0, dataToSend, headerBytes.Length, messageBytes.Length);
 
+                    // Send message initially
+                    udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
+                    Program.stop_wait_ACK = false;
+                    while(!Program.stop_wait_ACK)
+                    {
+                        if (Program.stop_wait_NACK)
+                        {
+                            Thread.Sleep(1000);
+
+                            // Reset crc_result to the original value if needed
+                            UInt16 crcValue = Convert.ToUInt16(crc_result, 16);
+                            crcValue -= 1;
+                            crc_result = crcValue.ToString("X");
+                            headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.LAST_FRAGMENT, 1, Convert.ToUInt16(crc_result, 16));
+                            Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
+                            Buffer.BlockCopy(messageBytes, 0, dataToSend, headerBytes.Length, messageBytes.Length);
+                            // Resend the message with original header bytes and data
+                            udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
+                        }
+                    }
+                    
+
+                }
+                else
+                {
+                    int total_packets = (int)Math.Ceiling(messageBytes.Length / (double)packet_size);
+                    Console.WriteLine($"Sending message: {msg}, Total Chunks: {total_packets}");
+                    for (int i = 0; i < total_packets; i++)
+                    {
+                        // The chunk size includes the packet size + 6 bytes for the header
+                        int currentChunkSize = Math.Min(packet_size, messageBytes.Length - (i * packet_size));
+                        Console.WriteLine($"Packet size: {currentChunkSize}");
+                        // Allocate space for both the header and the chunk
+                        chunk = new byte[packet_size + Header.HeaderData.header_size];
+                   
+
+                        // Copy the file data into the chunk, starting from byte 6 (skipping the header)
+                        Array.Copy(messageBytes, i * packet_size, chunk, Header.HeaderData.header_size, currentChunkSize);
+                        crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
+                    
+                        if (total_packets == 1 || i == total_packets - 1)
+                        {
+                            if (mistake)
+                            {
+                                UInt16 crcValue = Convert.ToUInt16(crc_result,16);
+                                crcValue += 1;
+                                crc_result = crcValue.ToString("X");
+                            }
+                            headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT,Header.HeaderData.LAST_FRAGMENT,i + 1,Convert.ToUInt16(crc_result,16));
+                        }
+                        else
+                        {
+                            if (mistake && i == 0)
+                            {
+                                UInt16 crcValue = Convert.ToUInt16(crc_result,16);
+                                crcValue += 1;
+                                crc_result = crcValue.ToString("X");
+                            }
+                            headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT,Header.HeaderData.DATA,i + 1,Convert.ToUInt16(crc_result,16));
+
+                        }
+                        //headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT,Header.HeaderData.LAST_FRAGMENT,i,Convert.ToUInt16(crc_result,16));
+
+                        Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
+
+                        // Send the chunk as a UDP packet
+                        udpClient.Send(chunk, chunk.Length, remoteEndPoint);
+                        //ACK_file = false;
+
+                        Console.WriteLine($"Sent chunk {i + 1}/{total_packets}");
+                        Program.stop_wait_ACK = false;
+                        while(!Program.stop_wait_ACK)
+                        {
+                            if (Program.stop_wait_NACK)
+                            {
+                                Thread.Sleep(1000);
+
+                                // Reset crc_result to the original value if needed
+                                UInt16 crcValue = Convert.ToUInt16(crc_result, 16);
+                                crcValue -= 1;
+                                crc_result = crcValue.ToString("X");
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA, 1, Convert.ToUInt16(crc_result, 16));
+                                Array.Copy(messageBytes, i * packet_size, chunk, Header.HeaderData.header_size, currentChunkSize);
+                                Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
+                                udpClient.Send(chunk, chunk.Length, remoteEndPoint);
+                            }
+                        }
+                    }
+
+                }
                 if (msg != "exit" && msg != "KEEP_Alive")
                 {
                     Console.WriteLine(
                         $"Sent message from port {source_Port} to {destination_IP} with port {destination_Port} : {msg}");
                     Console.WriteLine($"Message sent at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}");
                 }
-
-                /*if (msg == "KEEP_Alive")
-                {
-                    Console.WriteLine("Keep alive message sent");
-                }*/
-
             }
         }
 
         public void SendFile(string destination_IP, int source_Port, int destination_Port, string filePath,
-            ushort packet_size)
+            ushort packet_size, bool mistake)
         {
+            file_sent = true;
+
             Console.WriteLine($"File sent at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}");
 
             byte[] fileBytes = File.ReadAllBytes(filePath);
-            //byte[] dataToSend = new byte[headerBytes.Length + fileBytes.Length];
-            //Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
-            //Buffer.BlockCopy(fileBytes, 0, dataToSend, headerBytes.Length, fileBytes.Length);
             using (UdpClient udpClient = new UdpClient(source_Port))
             {
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
-                byte[] file_name = Encoding.ASCII.GetBytes(Path.GetFileName(filePath));
+                byte[] file_name = Encoding.UTF8.GetBytes(Path.GetFileName(filePath));
                 crc_result = checksum_counter(file_name,0);
                 Console.Write("CRC16 (current fragment): ");
                 Console.WriteLine(crc.ToHexString());
-                headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE, Header.HeaderData.FILE_NAME,1,(ushort)file_name.Length,Convert.ToUInt16(crc_result,16));
+                headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE, Header.HeaderData.FILE_NAME,1,Convert.ToUInt16(crc_result,16));
 
                 byte[] dataToSend = new byte[headerBytes.Length + file_name.Length];
 
                 Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
-                Buffer.BlockCopy(file_name, 0, dataToSend, 8, file_name.Length);
+                Buffer.BlockCopy(file_name, 0, dataToSend, Header.HeaderData.header_size, file_name.Length);
                 udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
                 //udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
                 int total_packets = (int)Math.Ceiling(fileBytes.Length / (double)packet_size);
                 Console.WriteLine($"Sending file: {filePath}, Total Chunks: {total_packets}");
                 for (int i = 0; i < total_packets; i++)
                 {
-
+                    
                     // The chunk size includes the packet size + 6 bytes for the header
                     int currentChunkSize = Math.Min(packet_size, fileBytes.Length - (i * packet_size));
                     Console.WriteLine($"Packet size: {currentChunkSize}");
                     // Allocate space for both the header and the chunk
-                    if (packet_size > MIN_PACKET_SIZE && currentChunkSize < packet_size)
-                    {
-                        Console.WriteLine($"Added padding {packet_size - currentChunkSize} bytes");
-                        chunk = new byte[packet_size];
-                    }
-
-                    if (packet_size < MIN_PACKET_SIZE)
-                    {
-                        chunk = new byte[MIN_PACKET_SIZE + 8];
-                        Console.WriteLine($"Added padding {chunk.Length - packet_size - 8} bytes");
-                    }
-                    else
-                    {
-                        chunk = new byte[packet_size + 8]; // packet_size for data + 6 for header
-
-                    }
+                    chunk = new byte[packet_size + Header.HeaderData.header_size];
+                   
 
                     // Copy the file data into the chunk, starting from byte 6 (skipping the header)
-                    Array.Copy(fileBytes, i * packet_size, chunk, 8, currentChunkSize);
-
-                    // Copy the header into the first 6 bytes of the chunk
-
-
-                    // Print the current chunk as a string (excluding the header)
-                    //string receivedText = Encoding.ASCII.GetString(chunk, 6, currentChunkSize);
-                    //Console.WriteLine(receivedText);  // Print the actual text received (excluding the header)
-
-                    // Calculate CRC16 over the data part (excluding the header)
+                    Array.Copy(fileBytes, i * packet_size, chunk, Header.HeaderData.header_size, currentChunkSize);
+                    crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
                     
-                    // Print the CRC16 for the chunk
-                    Console.Write("CRC16 (current fragment): ");
-                    crc_result = checksum_counter(chunk, 8);
-                    Console.WriteLine(crc_result);
-                    if (total_packets == 1 || i == total_packets)
+                    if (total_packets == 1 || i == total_packets - 1)
                     {
+                        if (mistake)
+                        {
+                            UInt16 crcValue = Convert.ToUInt16(crc_result,16);
+                            crcValue += 1;
+                            crc_result = crcValue.ToString("X");
+                        }
                         //header.setFlag(Header.HeaderData.MSG_FILE, Header.HeaderData.LAST_FRAGMENT);
-                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.LAST_FRAGMENT,i,packet_size,Convert.ToUInt16(crc_result,16));
+                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.LAST_FRAGMENT,i + 1,Convert.ToUInt16(crc_result,16));
                     }
                     else
                     {
+                        if (mistake && i == 0)
+                        {
+                            UInt16 crcValue = Convert.ToUInt16(crc_result,16);
+                            crcValue += 1;
+                            crc_result = crcValue.ToString("X");
+                        }
                         //header.setFlag(Header.HeaderData.MSG_FILE, Header.HeaderData.DATA);
-                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.DATA,i,packet_size,Convert.ToUInt16(crc_result,16));
+                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.DATA,i + 1,Convert.ToUInt16(crc_result,16));
 
                     }
-
-                    //header.sequence_number = i;
-                    //header.checksum = Convert.ToUInt16(crc_result,16);
-                    //header.payload_size = Convert.ToUInt16(currentChunkSize);
-                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.LAST_FRAGMENT,i,packet_size,Convert.ToUInt16(crc_result,16));
+                    //headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.LAST_FRAGMENT,i,Convert.ToUInt16(crc_result,16));
 
                     Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
 
@@ -161,17 +221,29 @@ namespace Computer1
                     ACK_file = false;
 
                     Console.WriteLine($"Sent chunk {i + 1}/{total_packets}");
-                    while (!ACK_file){}
-                    
-                    /*byte[] ackData = WaitForAck(udpClient, remoteEndPoint);
-                    if (ackData != null)
+                    ACK_file = false;
+                    while (!ACK_file)
                     {
-                        Console.WriteLine($"Received ACK for chunk {i + 1}");
+                        if (NACK_file)
+                        {         
+                            Thread.Sleep(1000);
+                            UInt16 crcValue = Convert.ToUInt16(crc_result,16);
+                            crcValue -= 1;
+                            crc_result = crcValue.ToString("X");
+                            if (total_packets == 1 || i == total_packets - 1)
+                            {
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.LAST_FRAGMENT,i + 1,Convert.ToUInt16(crc_result,16));
+                            }
+                            else
+                            {
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.DATA,i + 1,Convert.ToUInt16(crc_result,16));
+
+                            }
+                            Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
+                            udpClient.Send(chunk, chunk.Length, remoteEndPoint);
+                            mistake = false;
+                        }
                     }
-                    else
-                    {
-                        Console.WriteLine("Timeout waiting for ACK");
-                    }*/
                 }
 
 
@@ -183,50 +255,28 @@ namespace Computer1
                 long fileSizeInBytes = fileInfo.Length;
                 byte[] final_crc = File.ReadAllBytes(filePath);
                 crc_result = checksum_counter(final_crc,0);
-                Console.Write($"CRC16: {crc_result}");
                 Console.WriteLine($"File Size: {fileSizeInBytes} bytes");
             }
 
-
+            file_sent = false;
         }
 
         public void SendServiceMessage(string destination_IP, int source_Port, int destination_Port, byte[] headerBytes)
         {
-            //byte[] messageBytes = Encoding.ASCII.GetBytes(msg);
-
-
-            // Create the final byte array to send, with enough space for the flag and the message
             byte[] dataToSend = new byte[headerBytes.Length];
 
-            // Copy the flag and the message into the final byte array
             Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
-            //Buffer.BlockCopy(messageBytes, 0, dataToSend, headerBytes.Length, messageBytes.Length);
 
 
             using (UdpClient udpClient = new UdpClient(source_Port))
             {
-                /* IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, source_Port);
-                 sock.Bind(localEndPoint);
-
-                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
-
-                 sock.SendTo(dataToSend, remoteEndPoint);*/
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
 
-                // Send the data
                 udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
-
-
-
+                
                 Console.WriteLine(
                     $"Sent service message from port {source_Port} to {destination_IP}:{destination_Port}");
                 Console.WriteLine($"Message sent at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}");
-
-
-                /*if (msg == "KEEP_Alive")
-                {
-                    Console.WriteLine("Keep alive message sent");
-                }*/
 
             }
         }
@@ -243,6 +293,7 @@ namespace Computer1
             {
                 crc.Append(crc_bytes, padding_bytes,crc_bytes.Length - padding_bytes);
             }
+            Console.WriteLine($"CRC 16:{crc.ToHexString()}");
             return crc.ToHexString();
         }
     }
@@ -407,3 +458,19 @@ namespace Computer1
            System.Threading.Thread.Sleep(10);
        }
    }*/            
+   
+        /*if (packet_size > MIN_PACKET_SIZE && currentChunkSize < packet_size)
+                        {
+                            Console.WriteLine($"Added padding {packet_size - currentChunkSize} bytes");
+                            chunk = new byte[packet_size];
+                        }
+                        if (packet_size < MIN_PACKET_SIZE)
+                        {
+                            chunk = new byte[MIN_PACKET_SIZE + 8];
+                            Console.WriteLine($"Added padding {chunk.Length - packet_size - 8} bytes");
+                        }
+                        else
+                        {
+                            chunk = new byte[packet_size + 8]; // packet_size for data + 6 for header
+
+                        }*/

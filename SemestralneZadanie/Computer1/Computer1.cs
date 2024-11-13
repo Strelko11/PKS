@@ -43,6 +43,8 @@ namespace Computer1
         public static Stopwatch stopwatch = new Stopwatch();
         public static ushort packet_size;
         public static bool stop_wait_ACK = false;
+        public static bool stop_wait_NACK = false;
+        public static bool mistake = false;
 
         static int Main(string[] args)
         {
@@ -150,36 +152,17 @@ namespace Computer1
             if (iniciator)
             {
                 Console.WriteLine("SYN packet sent");
-                //Thread.Sleep(5000);
                 while (!SYN_ACK)
                 {
-                    //header.SetType(Header.HeaderData.SYN);
-                    //header.SetMsg(Header.HeaderData.MSG_NONE);
-                    //Console.WriteLine("posielam Syn");
-                    header.setFlag(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN);
-                    header.sequence_number = 0;
-                    header.checksum = 0;
-                    // Convert to byte array
-                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN, 1,0,0);
+                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN, 1,0);
                     udpClient.SendServiceMessage(destination_ip,source_sending_port, destination_listening_port, headerBytes);
-                    //udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, "SYN", headerBytes);
-                    //Console.WriteLine("SYN packet sent. Waiting for SYN_ACK...");
-                    //Thread.Sleep(2000);
                 }
-                //header.SetType(Header.HeaderData.ACK);
-                //header.SetMsg(Header.HeaderData.MSG_NONE);
-                header.setFlag(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK);
-                header.sequence_number = 0;
-                header.checksum = 0;
-                // Convert to byte array
-                headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK, 1,0,0);
+                headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK, 1,0);
                 udpClient.SendServiceMessage(destination_ip,source_sending_port, destination_listening_port, headerBytes);
-                //udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, "ACK", headerBytes);
                 Console.WriteLine("Handshake complete!");
                 handshake_complete = true;
                 Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n");
-                //Thread keepAlive = new Thread(() => keep_alive_thread(destination_ip, destination_listening_port));
-                //keepAlive.Start();
+                
             }
 
         }
@@ -196,11 +179,7 @@ namespace Computer1
                     string command = Console.ReadLine();
                     if (command == "q")
                     {
-                        header.setFlag(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA);
-                        header.sequence_number = 0;
-                        header.checksum = 0;
-                        //headerBytes = header.ToByteArray();
-                        udpClient.SendMessage(source_ip, source_sending_port, source_listening_port, "exit");
+                        udpClient.SendMessage(source_ip, source_sending_port, source_listening_port, 0,"exit", mistake);
                         isRunning = false;
                         continue;
                     }
@@ -209,13 +188,26 @@ namespace Computer1
                     {   
                         Console.WriteLine("Type message:");
                         message = Console.ReadLine();
-                        header.setFlag(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA);
-                        message_ACK = false;
-                        message_sent = true;
-                        header.sequence_number = 0;
-                        header.checksum = 0;
-                        //headerBytes = header.ToByteArray();
-                        udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port, message);
+                        Console.WriteLine("Do you want to create a mistake? (y/n)");
+                        if (Console.ReadLine() == "y")
+                        {
+                            mistake = true;
+                        }
+                        else
+                        {
+                            mistake = false;
+                        }
+                        Console.WriteLine("Enter packet size(1-1465 bytes): ");
+                        do
+                        { 
+                            packet_size = ushort.Parse(Console.ReadLine());
+                            if (packet_size > 1465 || packet_size < 1)
+                            {
+                                Console.WriteLine("Invalid packet size. Enter again:");
+                            }
+                            
+                        } while (packet_size > 1465 || packet_size < 1);
+                        udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port,packet_size, message, mistake);
                         //udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, headerBytes);
                         Console.WriteLine("Waiting for ACK");
                         if (iniciator)
@@ -227,7 +219,16 @@ namespace Computer1
                     if (command == "f")
                     {
                         Console.WriteLine("Sending files");
-                        Console.WriteLine("Enter max packet size(1-1465 bytes): ");
+                        Console.WriteLine("Do you want to create a mistake? (y/n)");
+                        if (Console.ReadLine() == "y")
+                        {
+                            mistake = true;
+                        }
+                        else
+                        {
+                            mistake = false;
+                        }
+                        Console.WriteLine("Enter packet size(1-1465 bytes): ");
                         do
                         { 
                             packet_size = ushort.Parse(Console.ReadLine());
@@ -239,7 +240,7 @@ namespace Computer1
                         } while (packet_size > 1465 || packet_size < 1);
                         //string filePath = "/Users/macbook/Desktop/UI Strelec 2a.pdf";
                         string filePath = "/Users/macbook/Desktop/test.txt";
-                        udpClient.SendFile(destination_ip,source_sending_port, destination_listening_port, filePath, packet_size);
+                        udpClient.SendFile(destination_ip,source_sending_port, destination_listening_port, filePath, packet_size,mistake);
                     }
                 }
             }
@@ -271,17 +272,10 @@ namespace Computer1
                 Console.WriteLine("Connection lost");
                 return;
             }
-            //header.SetType(Header.HeaderData.KEEP_ALIVE);
-            //header.SetMsg(Header.HeaderData.MSG_NONE);
             Console.WriteLine($"Hearbeat count: {hearBeat_count}");
-            header.setFlag(Header.HeaderData.MSG_NONE, Header.HeaderData.KEEP_ALIVE);
-            header.sequence_number = 0;
-            header.checksum = 0;
-            // Convert to byte array
-           // byte[] headerBytes = header.ToByteArray();
-            udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, "KEEP_Alive");
-            //Console.WriteLine("********************************************************");
-            //Console.WriteLine("Choose an operation(m,f,q)");
+            headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.KEEP_ALIVE, 1, 0);
+            udpClient.SendServiceMessage(destination_ip, source_sending_port, destination_listening_port, headerBytes);
+            //udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, 0,"KEEP_Alive", mistake);
             keep_alive_sent = true;
             hearBeat_count++;
         }

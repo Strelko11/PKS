@@ -11,6 +11,7 @@ public class Header
         //public ushort acknowledgment_number;
         public ushort checksum;
         public ushort payload_size;
+        public const int header_size = 6;
         
         // Constants for message types
         public const byte MSG_NONE = 0b0000;     // Žiadne dáta (napr. Keep-alive)
@@ -57,10 +58,10 @@ public class Header
             }
             return flag;
         }
-        public byte[] ToByteArray(byte type,byte msg, int sequenceNumber, ushort payloadSize, ushort checksum)
+        public byte[] ToByteArray(byte type,byte msg, int sequenceNumber, ushort checksum)
         {
             // 7-byte header
-            byte[] headerBytes = new byte[8];
+            byte[] headerBytes = new byte[header_size];
             flag = (byte)((type << 4) | msg);
 
             // Set flag (combining type and msg into 1 byte)
@@ -83,8 +84,8 @@ public class Header
             headerBytes[4] = (byte)(checksum >> 8);  // High byte
             headerBytes[5] = (byte)(checksum & 0xFF); // Low byte
             
-            headerBytes[6] = (byte)(payloadSize >> 8);
-            headerBytes[7] = (byte)(payloadSize & 0xFF);
+            //headerBytes[6] = (byte)(payloadSize >> 8);
+            //headerBytes[7] = (byte)(payloadSize & 0xFF);
 
             return headerBytes;
         }
