@@ -37,7 +37,7 @@ namespace Computer1
         public static bool message_ACK_sent = false;
         public static bool message_sent = false;
         public static System.Timers.Timer hearbeatTimer;
-        public static int hearBeat_count;
+        public static int heartBeat_count = 1;
         public static bool keep_alive_sent;
         public static byte[] headerBytes /*= new byte[7]*/;
         //public static Stopwatch stopwatch = new Stopwatch();
@@ -47,6 +47,7 @@ namespace Computer1
         public static bool mistake;
         public static bool ACK = true;
         public static bool NACK = false;
+        public static bool KEEP_ALIVE_ACK = false;
         
 
         static int Main(string[] args)
@@ -128,10 +129,10 @@ namespace Computer1
 
             if (handshake_complete && iniciator)
             {
-                //hearbeatTimer = new System.Timers.Timer(5000);  // 5000 milliseconds (5 seconds)
-                //hearbeatTimer.Elapsed += OnHeartBeat;  // Subscribe to the Elapsed event
-                //hearbeatTimer.AutoReset = true;  // Make the timer repeat
-                //hearbeatTimer.Enabled = true;  // Start the timer
+                hearbeatTimer = new System.Timers.Timer(5000);  // 5000 milliseconds (5 seconds)
+                hearbeatTimer.Elapsed += OnHeartBeat;  // Subscribe to the Elapsed event
+                hearbeatTimer.AutoReset = true;  // Make the timer repeat
+                hearbeatTimer.Enabled = true;  // Start the timer
 
             }
 
@@ -178,6 +179,7 @@ namespace Computer1
             {
                 if (handshake_complete && ACK)
                 {
+                    StartHeartBeatTimer();
                     Console.WriteLine("********************************************************");
                     Console.WriteLine("Choose an operation(m,f,q)");
                     string command = Console.ReadLine();
@@ -216,10 +218,11 @@ namespace Computer1
                         udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port,packet_size, message, mistake);
                         //udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, headerBytes);
                         //Console.WriteLine("Waiting for ACK");
-                        if (iniciator)
+                        StopHeartBeatTimer();
+                        /*if (iniciator)
                         {
-                            //ResetHeartBeatTimer();//TODO: Turned of for testing purposes
-                        }
+                            ResetHeartBeatTimer();//TODO: Turned of for testing purposes
+                        }*/
                     }
 
                     if (command == "f")
@@ -247,6 +250,11 @@ namespace Computer1
                         //string filePath = "/Users/macbook/Desktop/UI Strelec 2a.pdf";
                         string filePath = "/Users/macbook/Desktop/test.txt";
                         udpClient.SendFile(destination_ip,source_sending_port, destination_listening_port, filePath, packet_size,mistake);
+                        StopHeartBeatTimer();
+                        if (iniciator)
+                        {
+                            ResetHeartBeatTimer();//TODO: Turned of for testing purposes
+                        }
                     }
                 }
             }}
@@ -264,7 +272,7 @@ namespace Computer1
                
                 if (iniciator)
                 {
-                    //ResetHeartBeatTimer();//TODO: Turned of for testing purposes
+                    ResetHeartBeatTimer();//TODO: Turned of for testing purposes
                 }
             }
             //Console.WriteLine("Exited receive thread");
@@ -273,17 +281,17 @@ namespace Computer1
 
         private static void OnHeartBeat(object sender, ElapsedEventArgs e)
         {
-            if (hearBeat_count >= 3)
+            if (heartBeat_count >= 3)
             {
                 Console.WriteLine("Connection lost");
                 return;
             }
-            Console.WriteLine($"Hearbeat count: {hearBeat_count}");
+            Console.WriteLine($"Hearbeat count: {heartBeat_count}");
             headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.KEEP_ALIVE, 1, 0);
             udpClient.SendServiceMessage(destination_ip, source_sending_port, destination_listening_port, headerBytes);
             //udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, 0,"KEEP_Alive", mistake);
             keep_alive_sent = true;
-            hearBeat_count++;
+            heartBeat_count++;
         }
 
         private static void ResetHeartBeatTimer()
@@ -291,6 +299,24 @@ namespace Computer1
             if (isRunning)
             {
                 hearbeatTimer.Stop();
+                hearbeatTimer.Start();
+            }
+        }
+        
+        private static void StopHeartBeatTimer()
+        {
+            if (hearbeatTimer != null && hearbeatTimer.Enabled)
+            {
+                hearbeatTimer.Stop();
+            }
+        }
+
+
+        private static void StartHeartBeatTimer()
+        {
+            if (hearbeatTimer != null && !hearbeatTimer.Enabled)
+            {
+                heartBeat_count = 1;
                 hearbeatTimer.Start();
             }
         }

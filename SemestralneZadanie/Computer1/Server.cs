@@ -1,4 +1,5 @@
 
+
 namespace Computer1;
 using System.Net;
 using System.Net.Sockets;
@@ -98,6 +99,15 @@ public class UDP_server
                     Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n\n");
                     Program.handshake_complete = true;
                 }
+                else if (Program.keep_alive_sent)
+                {
+                    Program.keep_alive_sent = false;
+                    Program.heartBeat_count--;
+                    if (Program.heartBeat_count >= 1)
+                    {
+                        Program.heartBeat_count = 1;
+                    }
+                }
                 else
                 {
                     Program.NACK = false;
@@ -105,11 +115,7 @@ public class UDP_server
                     
                 }
 
-                if (Program.keep_alive_sent)
-                {
-                    Program.keep_alive_sent = false;
-                    Program.hearBeat_count--;
-                }
+                
 
                 
                 break;
@@ -223,7 +229,8 @@ public class UDP_server
     }
 
     public void ProcessFileMessage(byte[] buffer, byte msg_flag)
-    {
+    {   
+        //Thread.Sleep(2000);
         switch (msg_flag)
         {
             case 0b1011://####################################################################FILE NAME //TODO: Osetrit chybu ale nevytvarat
