@@ -27,8 +27,8 @@ namespace Computer1
         private static string message;
         public static bool isRunning;
         private static Header.HeaderData header = new Header.HeaderData();
-        public static bool SYN = false;
-        public static bool SYN_ACK = false;
+        public static bool handshake_SYN = false;
+        public static bool handshake_SYN_ACK = false;
         public static bool handshake_ACK = false;
         public static bool iniciator = false;
         public static bool handshake_complete = false;
@@ -45,6 +45,8 @@ namespace Computer1
         public static bool stop_wait_ACK = false;
         public static bool stop_wait_NACK = false;
         public static bool mistake = false;
+        public static bool ACK = false;
+        public static bool NACK = false;
 
         static int Main(string[] args)
         {
@@ -152,7 +154,7 @@ namespace Computer1
             if (iniciator)
             {
                 Console.WriteLine("SYN packet sent");
-                while (!SYN_ACK)
+                while (!handshake_SYN_ACK)
                 {
                     headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN, 1,0);
                     udpClient.SendServiceMessage(destination_ip,source_sending_port, destination_listening_port, headerBytes);
@@ -209,7 +211,7 @@ namespace Computer1
                         } while (packet_size > 1465 || packet_size < 1);
                         udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port,packet_size, message, mistake);
                         //udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, headerBytes);
-                        Console.WriteLine("Waiting for ACK");
+                        //Console.WriteLine("Waiting for ACK");
                         if (iniciator)
                         {
                             //ResetHeartBeatTimer();//TODO: Turned of for testing purposes
