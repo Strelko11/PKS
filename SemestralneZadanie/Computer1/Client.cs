@@ -71,30 +71,35 @@ namespace Computer1
                         //Console.Write(".");
                         if ((DateTime.Now - startTime).TotalMilliseconds < 5000)
                         {
+                            if (Program.NACK)
+                            {
+                                //Thread.Sleep(1000);
+                                crc_result = checksum_counter(dataToSend, Header.HeaderData.header_size);
+                            
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.LAST_FRAGMENT, 1, Convert.ToUInt16(crc_result, 16));
+                                Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
+                                Buffer.BlockCopy(messageBytes, 0, dataToSend, headerBytes.Length, messageBytes.Length);
+                                // Resend the message with original header bytes and data
+                                udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
+                            }
+                            
+                            
+                        }
+                        else
+                        {
                             if (Program.heartBeat_count > 3)
                             {
                                 Console.WriteLine("Connestion lost");
                                 Program.isRunning = false;
                                 break;
                             }
-                            Console.WriteLine("Keep-alive sent");
+                            //Console.WriteLine("Keep-alive sent");
                             keep_alive(udpClient, startTime, remoteEndPoint);
                             Program.keep_alive_sent = true;
                             Program.heartBeat_count++;
                             startTime = DateTime.Now;
-                            
                         }
-                        if (Program.NACK)
-                        {
-                            //Thread.Sleep(1000);
-                            crc_result = checksum_counter(dataToSend, Header.HeaderData.header_size);
-                            
-                            headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.LAST_FRAGMENT, 1, Convert.ToUInt16(crc_result, 16));
-                            Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
-                            Buffer.BlockCopy(messageBytes, 0, dataToSend, headerBytes.Length, messageBytes.Length);
-                            // Resend the message with original header bytes and data
-                            udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
-                        }
+                        
                     }
                 }
                 
@@ -190,7 +195,7 @@ namespace Computer1
                                     Program.isRunning = false;
                                     break;
                                 }
-                                Console.WriteLine("Keep-alive sent");
+                                //Console.WriteLine("Keep-alive sent");
                                 keep_alive(udpClient, startTime, remoteEndPoint);
                                 Program.keep_alive_sent = true;
                                 Program.heartBeat_count++;
@@ -246,7 +251,7 @@ namespace Computer1
                             Program.isRunning = false;
                             break;
                         }
-                        Console.WriteLine("Keep-alive sent");
+                        //Console.WriteLine("Keep-alive sent");
                         keep_alive(udpClient, startTime, remoteEndPoint);
                         Program.keep_alive_sent = true;
                         Program.heartBeat_count++;
@@ -356,7 +361,7 @@ namespace Computer1
                                 Program.isRunning = false;
                                 break;
                             }
-                            Console.WriteLine("Keep-alive sent");
+                            //Console.WriteLine("Keep-alive sent");
                             keep_alive(udpClient, startTime, remoteEndPoint);
                             Program.keep_alive_sent = true;
                             Program.heartBeat_count++;
@@ -433,7 +438,7 @@ namespace Computer1
             Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
             udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
             
-            Console.WriteLine("Sent keep_alive message to maintain connection.");
+            //Console.WriteLine("Sent keep_alive message to maintain connection.");
             // Reset the start time to avoid continuously sending keep-alive messages
             //startTime = DateTime.Now;  // Optional, to avoid sending keep_alive repeatedly every 5 seconds
         }

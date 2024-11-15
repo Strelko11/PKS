@@ -286,7 +286,7 @@ namespace Computer1
                 Console.WriteLine("Connection lost");
                 return;
             }
-            Console.WriteLine($"Hearbeat count: {heartBeat_count}");
+            //Console.WriteLine($"Hearbeat count: {heartBeat_count}");
             headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.KEEP_ALIVE, 1, 0);
             udpClient.SendServiceMessage(destination_ip, source_sending_port, destination_listening_port, headerBytes);
             //udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, 0,"KEEP_Alive", mistake);
