@@ -8,17 +8,17 @@ using InvertedTomato.Crc;
 public class UDP_server
 {
 
-    public byte type;
+    //public byte type;
     private Client client;
     public string receivedMessage;
-    public int count = 0;
+    public int count;
     private CrcAlgorithm crc;
     public uint combined_sequence_number;
     public ushort combined_checksum;
-    public ushort combined_payload;
+    //public ushort combined_payload;
     public string file_name;
     public string file_path = "/Users/macbook/Downloads/";
-    public byte[] file;
+    //public byte[] file;
     public List<byte[]> file_bytes = new List<byte[]>();
     public List<byte[]> message_bytes = new List<byte[]>();
     public byte[] fileBytes;
@@ -27,6 +27,7 @@ public class UDP_server
     public byte[] complete_message;
     public string formattedCrcResult;
     public string formattedHeaderChecksum;
+    
 
     public UDP_server(Client client)
     {
@@ -41,12 +42,17 @@ public class UDP_server
 
             while (Program.isRunning)
             {
-                byte[] buffer = udpClient.Receive(ref endPoint);
-                byte flag = buffer[0];
-                byte type_flag = (byte)((flag >> 4) & 0b1111);
-                byte msg_flag = (byte)(flag & 0b1111);
-                ProcessMessageFlag(type_flag, msg_flag, buffer);
+                if (udpClient.Available > 0)
+                {
+                    byte[] buffer = udpClient.Receive(ref endPoint);
+                    byte flag = buffer[0];
+                    byte type_flag = (byte)((flag >> 4) & 0b1111);
+                    byte msg_flag = (byte)(flag & 0b1111);
+                    ProcessMessageFlag(type_flag, msg_flag, buffer);
+                }
+                
             }
+            
         }
     }
 
@@ -63,7 +69,7 @@ public class UDP_server
                 ProcessTextMessage(msg_flag, buffer);
                 break;
             case 0b0010:
-                Console.WriteLine("Subor");
+                //Console.WriteLine("Subor");
                 ProcessFileMessage(buffer, msg_flag);
                 break;
         }
@@ -96,8 +102,7 @@ public class UDP_server
                 {
                     Program.NACK = false;
                     Program.ACK = true;
-                    //Console.WriteLine("TA SAK TU SOM");
-                    //Console.WriteLine("Sent ACK packet for message");
+                    
                 }
 
                 if (Program.keep_alive_sent)
@@ -123,51 +128,63 @@ public class UDP_server
 
 
     public void ProcessTextMessage(byte msg_flag, byte[] buffer)
-    {
+    {   
+        
         switch (msg_flag)
         {
+            
             case 0b0100:
                 messageBytes = new byte[buffer.Length - Header.HeaderData.header_size];
                 Buffer.BlockCopy(buffer, Header.HeaderData.header_size, messageBytes, 0, messageBytes.Length);
                 crc_result = checksum_counter(messageBytes,0);
                 var header = extract_header(buffer);
-                Console.WriteLine($"Calculated CRC16: {crc_result}");
-                Console.WriteLine($"Header Checksum: {header.checksum.ToString("X4")}");
+                //Console.WriteLine($"Calculated CRC16: {crc_result}");
+                //Console.WriteLine($"Header Checksum: {header.checksum.ToString("X4")}");
                 formattedCrcResult = crc_result.PadLeft(4, '0').ToUpper();
                 formattedHeaderChecksum = header.checksum.ToString("X4").ToUpper();
+                Console.Write($"\nRecived text message \"{Encoding.UTF8.GetString(messageBytes, 0, messageBytes.Length)}\" with sequence number {header.sequenceNumber}");
+
                 
                 if (formattedCrcResult == formattedHeaderChecksum)
                 {
-                    Console.WriteLine("Checksum is EQUAL");
+                    //Console.WriteLine("Checksum is EQUAL");
                     ACK_message();
                     message_bytes.Add(messageBytes);
+                    Console.WriteLine("\nCORRECT information. Sending ACK");
                 }
                 else
                 {
-                    Console.WriteLine("Checksum is NOT EQUAL");
+                    //Console.WriteLine("Checksum is NOT EQUAL");
+                    Console.WriteLine("\nINCORRECT information. Sending NACK");
                     send_NACK();
                 }
-                Console.WriteLine("**************************************");
+                //Console.WriteLine("**************************************");
                 break;
             case 0b1111:
+                
                 messageBytes = new byte[buffer.Length - Header.HeaderData.header_size];
                 Buffer.BlockCopy(buffer, Header.HeaderData.header_size, messageBytes, 0, messageBytes.Length);
                 header = extract_header(buffer);
                 crc_result = checksum_counter(messageBytes,0);
-                Console.WriteLine($"Calculated CRC16: {crc_result}");
-                Console.WriteLine($"Header Checksum: {header.checksum.ToString("X4")}");
+                //Console.WriteLine($"Calculated CRC16: {crc_result}");
+                //Console.WriteLine($"Header Checksum: {header.checksum.ToString("X4")}");
                 formattedCrcResult = crc_result.PadLeft(4, '0').ToUpper();
                 formattedHeaderChecksum = header.checksum.ToString("X4").ToUpper();
-                
+                Console.WriteLine($"\nRecived text message \"{Encoding.UTF8.GetString(messageBytes, 0, messageBytes.Length)}\" with sequence number {header.sequenceNumber}");
+
                 
                 if (formattedCrcResult == formattedHeaderChecksum)
                 {
-                    Console.WriteLine("Checksum is EQUAL");
+                    //Console.WriteLine("Checksum is EQUAL");
+                    Console.WriteLine("\nCORRECT information. Sending ACK");
                     ACK_message();
+                    
+
                 }
                 else
                 {
-                    Console.WriteLine("Checksum is NOT EQUAL");
+                    //Console.WriteLine("Checksum is NOT EQUAL");
+                    Console.WriteLine("\nINCORRECT information. Sending NACK");
                     send_NACK();
                     break;
                 }
@@ -184,19 +201,20 @@ public class UDP_server
 
                 // Print or use the complete message
                 receivedMessage = Encoding.UTF8.GetString(complete_message);
-                Console.WriteLine("Received complete message: " + receivedMessage);
-                Program.message_received = true;
+                Console.WriteLine("\nReceived complete message: " + receivedMessage);
+                Console.WriteLine($"Message received at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}");
+                //Program.message_received = true;
 
                 // Clear the list after processing the complete message
                 message_bytes.Clear();
                 
                 
-                if (receivedMessage != "exit")
+                /*if (receivedMessage != "exit")
                 {
                     Console.WriteLine(
                         "Received message " + receivedMessage);
-                    Program.message_received = true;
-                }
+                    //Program.message_received = true;
+                }*/
                 break;
             default:
                 Console.WriteLine("Neznamy typ spravy");
@@ -360,8 +378,8 @@ public class UDP_server
         checksum[1] = header_bytes[5];
         combined_checksum = (ushort)( checksum[0] << 8 | checksum[1]);
         
-        Console.WriteLine($"Sequence number: {combined_sequence_number}");
-        Console.WriteLine($"Checksum: {combined_checksum:X4}"); // Print checksum in hexadecimal format
+        //Console.WriteLine($"Sequence number: {combined_sequence_number}");
+        //Console.WriteLine($"Checksum: {combined_checksum:X4}"); // Print checksum in hexadecimal format
         return(combined_sequence_number, combined_checksum);
     }
     
@@ -408,11 +426,11 @@ public class UDP_server
         client.SendServiceMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, headerBytes);
     }
 
-    private void ACK_with_checksum()
+    /*private void ACK_with_checksum()
     {
         Header.HeaderData responseHeader = new Header.HeaderData();
         responseHeader.setFlag(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK);
-    }
+    }*/
     
 }
 

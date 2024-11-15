@@ -32,21 +32,22 @@ namespace Computer1
         public static bool handshake_ACK = false;
         public static bool iniciator = false;
         public static bool handshake_complete = false;
-        public static bool message_received = false;
-        public static bool message_ACK = true;
+        //public static bool message_received = false;
+        //public static bool message_ACK = true;
         public static bool message_ACK_sent = false;
         public static bool message_sent = false;
         public static System.Timers.Timer hearbeatTimer;
-        public static int hearBeat_count = 0;
-        public static bool keep_alive_sent = false;
+        public static int hearBeat_count;
+        public static bool keep_alive_sent;
         public static byte[] headerBytes /*= new byte[7]*/;
-        public static Stopwatch stopwatch = new Stopwatch();
+        //public static Stopwatch stopwatch = new Stopwatch();
         public static ushort packet_size;
         public static bool stop_wait_ACK = false;
         public static bool stop_wait_NACK = false;
-        public static bool mistake = false;
-        public static bool ACK = false;
+        public static bool mistake;
+        public static bool ACK = true;
         public static bool NACK = false;
+        
 
         static int Main(string[] args)
         {
@@ -72,6 +73,7 @@ namespace Computer1
             // Console.WriteLine("Enter source sending port:");
             // input = Console.ReadLine();
             // source_sending_port = int.Parse(input);
+            
 
             if (args.Length < 5)
             {
@@ -172,17 +174,19 @@ namespace Computer1
 
         public static void send_thread(string destination_ip, int destination_listening_port)
         {
-            while (isRunning)
+            while (isRunning){
             {
-                if (handshake_complete && message_ACK)
+                if (handshake_complete && ACK)
                 {
                     Console.WriteLine("********************************************************");
                     Console.WriteLine("Choose an operation(m,f,q)");
                     string command = Console.ReadLine();
                     if (command == "q")
                     {
-                        udpClient.SendMessage(source_ip, source_sending_port, source_listening_port, 0,"exit", mistake);
+                        //Console.In.Close();
+                        //udpClient.SendMessage(source_ip, source_sending_port, source_listening_port, 0,"exit", mistake);
                         isRunning = false;
+                        //cts.Cancel();
                         continue;
                     }
 
@@ -245,16 +249,16 @@ namespace Computer1
                         udpClient.SendFile(destination_ip,source_sending_port, destination_listening_port, filePath, packet_size,mistake);
                     }
                 }
-            }
-            //Console.WriteLine("Exited program");
+            }}
+            Console.WriteLine("Exited program");
         }
 
 
 
         public static void receive_thread(string source_ip, int source_port)
         {
-            //while (isRunning)
-            //{
+            while (isRunning)
+            {
                 //header.SetType(Header.HeaderData.TEST);
                 udpServer.Start(source_ip, source_port);
                
@@ -262,7 +266,7 @@ namespace Computer1
                 {
                     //ResetHeartBeatTimer();//TODO: Turned of for testing purposes
                 }
-            //}
+            }
             //Console.WriteLine("Exited receive thread");
 
         }
