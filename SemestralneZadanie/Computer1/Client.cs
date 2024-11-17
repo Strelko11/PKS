@@ -23,6 +23,8 @@ namespace Computer1
         public string crc_result;
         //public static  bool file_sent = false;
         //private CrcAlgorithm crc = CrcAlgorithm.CreateCrc16CcittFalse();
+        byte[] lastSentPacket = null;
+        private DateTime startTime;
 
 
         public Client(UDP_server udpServer)
@@ -41,6 +43,7 @@ namespace Computer1
                 {
                     Program.ACK = false;
                     Program.NACK = false;
+                    Program.KEEP_ALIVE_ACK = false;
                     // Calculate initial CRC and prepare message
                     crc_result = checksum_counter(messageBytes, 0);
                     if (mistake)
@@ -64,43 +67,58 @@ namespace Computer1
                     //Program.ACK = false;
                     //Console.WriteLine($"Current thread ID: {Thread.CurrentThread.ManagedThreadId}");
 
-                    while(!Program.ACK)
-                    {
-                        //Console.Write(".");
-                        Thread.Sleep(1);
-                        //Console.Write(".");
-                        if ((DateTime.Now - startTime).TotalMilliseconds < 5000)
-                        {
-                            if (Program.NACK)
-                            {
-                                //Thread.Sleep(1000);
-                                crc_result = checksum_counter(dataToSend, Header.HeaderData.header_size);
-                            
-                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.LAST_FRAGMENT, 1, Convert.ToUInt16(crc_result, 16));
-                                Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
-                                Buffer.BlockCopy(messageBytes, 0, dataToSend, headerBytes.Length, messageBytes.Length);
-                                // Resend the message with original header bytes and data
-                                udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
-                            }
-                            
-                            
-                        }
-                        else
-                        {
-                            if (Program.heartBeat_count > 3)
-                            {
-                                Console.WriteLine("Connestion lost");
-                                Program.isRunning = false;
-                                break;
-                            }
-                            //Console.WriteLine("Keep-alive sent");
-                            keep_alive(udpClient, startTime, remoteEndPoint);
-                            Program.keep_alive_sent = true;
-                            Program.heartBeat_count++;
-                            startTime = DateTime.Now;
-                        }
+                    while (!Program.ACK)
+                         {
+                            //Thread.Sleep(3000); //TODO: Odkomentovat ak bude treba testovat rychlost pripojenia
                         
-                    }
+                            if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
+                            {
+                                if (Program.heartBeat_count > 3)
+                                {
+                                    Console.WriteLine("Connestion lost"); 
+                                    Program.isRunning = false;
+                                    break;
+                                }
+
+                                //try
+                                //{
+                                //if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
+                                //{
+                                if (!Program.KEEP_ALIVE_ACK)
+                                {
+                                    Console.WriteLine("Sending keep-alive...");
+                                    keep_alive(udpClient, startTime, remoteEndPoint);
+                                    Program.keep_alive_sent = true;
+                                    Program.heartBeat_count++;
+                                    startTime = DateTime.Now; // Reset the timeout timer
+                                }
+                                //}
+                                
+                                //}
+                                /*catch (Exception ex)
+                                {
+                                    Console.WriteLine($"ERROR: {ex.Message}");
+                                }*/
+                            }
+                        
+                            if(Program.NACK ||  Program.KEEP_ALIVE_ACK)
+                            {
+                                Program.KEEP_ALIVE_ACK = false;
+                                Program.NACK = false;
+                                //Thread.Sleep(1000);
+                                Console.WriteLine("RESENT PACKET XD");
+                                //Thread.Sleep(1000);
+                        
+                                crc_result = checksum_counter(dataToSend, Header.HeaderData.header_size);
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.FILE_NAME, 1,Convert.ToUInt16(crc_result,16));
+                       
+                                Array.Copy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
+                                udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
+                                startTime = DateTime.Now;
+
+                                //lastSentPacket = (byte[])dataToSend.Clone()
+                            }  
+                         }   
                 }
                 
                 else
@@ -112,6 +130,7 @@ namespace Computer1
                     {
                         Program.ACK = false;
                         Program.NACK = false;
+                        Program.KEEP_ALIVE_ACK = false;
                         // The chunk size includes the packet size + 6 bytes for the header
                         int currentChunkSize = Math.Min(packet_size, messageBytes.Length - (i * packet_size));
                         //Console.WriteLine($"Packet size: {currentChunkSize}");
@@ -157,53 +176,61 @@ namespace Computer1
                         string sent_message = Encoding.UTF8.GetString(sentMessage);
 
                         Console.WriteLine($"\nSent chunk {i + 1}/{total_packets} with payload size {currentChunkSize}: {sent_message}");
-                        DateTime startTime = DateTime.Now;
-                        while(!Program.ACK)
-                        {
-                            Thread.Sleep(1);
-                            if ((DateTime.Now - startTime).TotalMilliseconds < 5000)
-                            {
-                                
-                                if (Program.NACK)
-                                {
-                                    //Thread.Sleep(1000);
-                                    Console.WriteLine($"Resent chunk {i + 1}/{total_packets} with payload size {currentChunkSize}: {sent_message}");
-                                    crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
-                                    if (i == total_packets - 1 || total_packets == 1)
-                                    {
-                                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.LAST_FRAGMENT, i+1, Convert.ToUInt16(crc_result, 16));
-
-                                    }
-                                    else
-                                    {
-                                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA, i+1, Convert.ToUInt16(crc_result, 16));
-
-                                    }
-                                    Array.Copy(messageBytes, i * packet_size, chunk, Header.HeaderData.header_size, currentChunkSize);
-                                    Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
-                                    udpClient.Send(chunk, chunk.Length, remoteEndPoint);
-                                    mistake = false;
-                                    Program.NACK = false;
-                                }
-                                
-                            }
-                            else
+                        startTime = DateTime.Now;
+                          // To store the last sent packet before disconnection
+                        //lastSentPacket = chunk;
+                         while (!Program.ACK)
+                         {
+                            //Thread.Sleep(3000); //TODO: Odkomentovat ak bude treba testovat rychlost pripojenia
+                        
+                            if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
                             {
                                 if (Program.heartBeat_count > 3)
                                 {
-                                    Console.WriteLine("Connestion lost");
+                                    Console.WriteLine("Connestion lost"); 
                                     Program.isRunning = false;
                                     break;
                                 }
-                                //Console.WriteLine("Keep-alive sent");
-                                keep_alive(udpClient, startTime, remoteEndPoint);
-                                Program.keep_alive_sent = true;
-                                Program.heartBeat_count++;
-                                startTime = DateTime.Now;
+
+                                //try
+                                //{
+                                //if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
+                                //{
+                                if (!Program.KEEP_ALIVE_ACK)
+                                {
+                                    Console.WriteLine("Sending keep-alive...");
+                                    keep_alive(udpClient, startTime, remoteEndPoint);
+                                    Program.keep_alive_sent = true;
+                                    Program.heartBeat_count++;
+                                    startTime = DateTime.Now; // Reset the timeout timer
+                                }
+                                //}
+                                
+                                //}
+                                /*catch (Exception ex)
+                                {
+                                    Console.WriteLine($"ERROR: {ex.Message}");
+                                }*/
                             }
-                            
-                        }
                         
+                            if(Program.NACK ||  Program.KEEP_ALIVE_ACK)
+                            {
+                                Program.KEEP_ALIVE_ACK = false;
+                                Program.NACK = false;
+                                //Thread.Sleep(1000);
+                                Console.WriteLine("RESENT PACKET XD");
+                                //Thread.Sleep(1000);
+                        
+                                crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.FILE_NAME, 1,Convert.ToUInt16(crc_result,16));
+                       
+                                Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
+                                udpClient.Send(chunk, chunk.Length, remoteEndPoint);
+                                startTime = DateTime.Now;
+
+                                //lastSentPacket = (byte[])dataToSend.Clone()
+                            }  
+                         }   
                     }
 
                 }
@@ -227,6 +254,7 @@ namespace Computer1
             {
                 Program.ACK = false;
                 Program.NACK = false;
+                Program.KEEP_ALIVE_ACK = false;
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
                 byte[] file_name = Encoding.UTF8.GetBytes(Path.GetFileName(filePath));
                 crc_result = checksum_counter(file_name,0);
@@ -239,38 +267,61 @@ namespace Computer1
                 Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
                 Buffer.BlockCopy(file_name, 0, dataToSend, Header.HeaderData.header_size, file_name.Length);
                 udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
-                while (!Program.ACK)
-                {
-                    Thread.Sleep(1);
-                    DateTime startTime = DateTime.Now;
-                    if ((DateTime.Now - startTime).TotalMilliseconds < 5000)
+                byte[] lastSentPacket = null;  // To store the last sent packet before disconnection
+                startTime = DateTime.Now;
+
+                    while (!Program.ACK)
                     {
-                        if (Program.heartBeat_count > 3)
-                        {
-                            Console.WriteLine("Connestion lost");
-                            Program.isRunning = false;
-                            break;
-                        }
-                        //Console.WriteLine("Keep-alive sent");
-                        keep_alive(udpClient, startTime, remoteEndPoint);
-                        Program.keep_alive_sent = true;
-                        Program.heartBeat_count++;
-                        //startTime = DateTime.Now;
-                            
-                    }
-                    if (Program.NACK)
-                    {
-                        //Thread.Sleep(1000);
-                        Console.WriteLine("RESENT PACKET");
-                        //Thread.Sleep(1000);
+                        //Thread.Sleep(3000); //TODO: Odkomentovat ak bude treba testovat rychlost pripojenia
                         
-                        crc_result = checksum_counter(dataToSend, Header.HeaderData.header_size);
-                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.FILE_NAME,1,Convert.ToUInt16(crc_result,16));
+                        if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
+                        {
+                            if (Program.heartBeat_count > 3)
+                            {
+                                Console.WriteLine("Connestion lost");
+                                Program.isRunning = false;
+                                break;
+                            }
+
+                            //try
+                            //{
+                            //if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
+                            //{
+                            if (!Program.KEEP_ALIVE_ACK)
+                            {
+                                Console.WriteLine("Sending keep-alive...");
+                                keep_alive(udpClient, startTime, remoteEndPoint);
+                                Program.keep_alive_sent = true;
+                                Program.heartBeat_count++;
+                                startTime = DateTime.Now; // Reset the timeout timer
+                            }
+                            //}
+                                
+                            //}
+                            /*catch (Exception ex)
+                            {
+                                Console.WriteLine($"ERROR: {ex.Message}");
+                            }*/
+                        }
+                        
+                        if(Program.NACK ||  Program.KEEP_ALIVE_ACK)
+                        {
+                            Program.KEEP_ALIVE_ACK = false;
+                            Program.NACK = false;
+                            //Thread.Sleep(1000);
+                            Console.WriteLine("RESENT PACKET XD");
+                            //Thread.Sleep(1000);
+                        
+                            crc_result = checksum_counter(dataToSend, Header.HeaderData.header_size);
+                            headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.FILE_NAME, 1,Convert.ToUInt16(crc_result,16));
                        
-                        Array.Copy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
-                        udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
+                            Array.Copy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
+                            udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
+                            startTime = DateTime.Now;
+
+                            //lastSentPacket = (byte[])dataToSend.Clone()
+                        }  
                     }
-                }
 
                 if (Program.isRunning)
                 {
@@ -281,6 +332,7 @@ namespace Computer1
                 {
                     Program.ACK = false;
                     Program.NACK = false;
+                    Program.KEEP_ALIVE_ACK = false;
                     // The chunk size includes the packet size + 6 bytes for the header
                     int currentChunkSize = Math.Min(packet_size, fileBytes.Length - (i * packet_size));
                     //Console.WriteLine($"Packet size: {currentChunkSize}");
@@ -325,35 +377,14 @@ namespace Computer1
 
                     Console.WriteLine($"\nSent chunk {i + 1}/{total_packets} with payload size {currentChunkSize}");
                     //ACK_file = false;
-                    DateTime startTime = DateTime.Now;
+                    startTime = DateTime.Now;
+                    DateTime lastKeepAliveTime = DateTime.Now; // Add this at the beginning of your method
+
                     while (!Program.ACK)
                     {
-                        Thread.Sleep(1);
-                        if ((DateTime.Now - startTime).TotalMilliseconds < 5000)
-                        {
-                            if (Program.NACK)
-                            {         
-                                Console.WriteLine($"Resent chunk {i + 1}/{total_packets} with payload size {currentChunkSize}");
-                                //Thread.Sleep(1000);
-                                UInt16 crcValue = Convert.ToUInt16(crc_result,16);
-                                crcValue -= 1;
-                                crc_result = crcValue.ToString("X");
-                                if (total_packets == 1 || i == total_packets - 1)
-                                {
-                                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.LAST_FRAGMENT,i + 1,Convert.ToUInt16(crc_result,16));
-                                }
-                                else
-                                {
-                                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.DATA,i + 1,Convert.ToUInt16(crc_result,16));
-
-                                }
-                                Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
-                                udpClient.Send(chunk, chunk.Length, remoteEndPoint);
-                                mistake = false;
-                                //Program.heartBeat_count = 0;
-                            }
-                        }
-                        else
+                        //Thread.Sleep(3000); TODO: Odkomentovat ak bude treba testovat rychlost pripojenia
+                        
+                        if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
                         {
                             if (Program.heartBeat_count > 3)
                             {
@@ -361,12 +392,45 @@ namespace Computer1
                                 Program.isRunning = false;
                                 break;
                             }
-                            //Console.WriteLine("Keep-alive sent");
-                            keep_alive(udpClient, startTime, remoteEndPoint);
-                            Program.keep_alive_sent = true;
-                            Program.heartBeat_count++;
-                            startTime = DateTime.Now;
+
+                            //try
+                            //{
+                            //if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
+                            //{
+                            if (!Program.KEEP_ALIVE_ACK)
+                            {
+                                Console.WriteLine("Sending keep-alive...");
+                                keep_alive(udpClient, startTime, remoteEndPoint);
+                                Program.keep_alive_sent = true;
+                                Program.heartBeat_count++;
+                                startTime = DateTime.Now; // Reset the timeout timer
+                            }
+                            //}
+                                
+                            //}
+                            /*catch (Exception ex)
+                            {
+                                Console.WriteLine($"ERROR: {ex.Message}");
+                            }*/
                         }
+                        
+                        if(Program.NACK ||  Program.KEEP_ALIVE_ACK)
+                        {
+                            Program.KEEP_ALIVE_ACK = false;
+                            Program.NACK = false;
+                            //Thread.Sleep(1000);
+                            Console.WriteLine("RESENT PACKET XD");
+                            //Thread.Sleep(1000);
+                        
+                            crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
+                            headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.DATA,i + 1,Convert.ToUInt16(crc_result,16));
+                       
+                            Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
+                            udpClient.Send(chunk, chunk.Length, remoteEndPoint);
+                            startTime = DateTime.Now;
+
+                            //lastSentPacket = (byte[])dataToSend.Clone()
+                        }  
                     }
 
                     if (!Program.isRunning)
@@ -437,8 +501,8 @@ namespace Computer1
             byte[] dataToSend = new byte[headerBytes.Length];
             Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
             udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
-            
-            //Console.WriteLine("Sent keep_alive message to maintain connection.");
+            Console.WriteLine($"Sent keep_alive message to maintain connection. {Program.heartBeat_count}");
+            Program.KEEP_ALIVE_ACK = false;
             // Reset the start time to avoid continuously sending keep-alive messages
             //startTime = DateTime.Now;  // Optional, to avoid sending keep_alive repeatedly every 5 seconds
         }

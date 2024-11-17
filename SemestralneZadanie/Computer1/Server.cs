@@ -92,7 +92,7 @@ public class UDP_server
                 //Console.WriteLine("Tu som sa dostal");
                 break;
             case 0b0011:
-                //Console.WriteLine("Servisna sprava ACK");
+                Console.WriteLine("Servisna sprava ACK");
                 if (!Program.handshake_complete)
                 {
                     Program.handshake_ACK = true;
@@ -102,6 +102,7 @@ public class UDP_server
                 else if (Program.keep_alive_sent)
                 {
                     Program.keep_alive_sent = false;
+                    Program.KEEP_ALIVE_ACK = true;
                     Program.heartBeat_count--;
                     if (Program.heartBeat_count >= 1)
                     {
@@ -112,7 +113,6 @@ public class UDP_server
                 {
                     Program.NACK = false;
                     Program.ACK = true;
-                    
                 }
 
                 

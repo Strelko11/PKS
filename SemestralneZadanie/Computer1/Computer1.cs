@@ -19,7 +19,7 @@ namespace Computer1
         private static Client udpClient = new Client(udpServer);
         private static UDP_server udpServer = new UDP_server(udpClient);
         public static string destination_ip;
-        private static string source_ip = "127.0.0.1";
+        private static string source_ip = "192.168.1.2";
         public static int destination_listening_port;
         public static int destination_sending_port;
         public static int source_listening_port;
@@ -52,28 +52,40 @@ namespace Computer1
 
         static int Main(string[] args)
         {
-            //Console.WriteLine("Enter source IP address:");
-            //source_ip = Console.ReadLine();
+            /*UdpClient client = new UdpClient();
+            client.Connect("192.168.1.3", 5000); // Replace with your server IP
 
-            // Console.WriteLine("Enter destination IP address:");
-            // destination_ip = Console.ReadLine();
+            Console.WriteLine("Enter message:");
+            string message = Console.ReadLine();
+            byte[] data = Encoding.UTF8.GetBytes(message);
 
-            // Console.WriteLine("Enter destination listening port:");
-            // string input = Console.ReadLine();
-            // destination_listening_port = int.Parse(input);
+            // Debugging output before sending
+            Console.WriteLine($"Sending message: {message} to {client.Client.RemoteEndPoint}");
 
-            // Console.WriteLine("Enter destination sending port:");
-            // input = Console.ReadLine();
-            // destination_sending_port = int.Parse(input);
+            client.Send(data, data.Length);
+            client.Close();*/
+            /*Console.WriteLine("Enter source IP address:");
+            source_ip = Console.ReadLine();
+
+            Console.WriteLine("Enter destination IP address:");
+            destination_ip = Console.ReadLine();
+
+            Console.WriteLine("Enter destination listening port:");
+            string input = Console.ReadLine();
+            destination_listening_port = int.Parse(input);
+
+            Console.WriteLine("Enter destination sending port:");
+            input = Console.ReadLine();
+            destination_sending_port = int.Parse(input);
 
 
-            // Console.WriteLine("Enter source listening port:");
-            // input = Console.ReadLine();
-            // source_listening_port = int.Parse(input);
+            Console.WriteLine("Enter source listening port:");
+            input = Console.ReadLine();
+            source_listening_port = int.Parse(input);
 
-            // Console.WriteLine("Enter source sending port:");
-            // input = Console.ReadLine();
-            // source_sending_port = int.Parse(input);
+            Console.WriteLine("Enter source sending port:");
+            input = Console.ReadLine();
+            source_sending_port = int.Parse(input);*/
             
 
             if (args.Length < 5)
@@ -98,11 +110,11 @@ namespace Computer1
 
 
 
-            // Console.WriteLine("Do you want to initiate the handshake? (y/n)");
-            // input = Console.ReadLine();
-            // if(input == "y"){
-            //     iniciator = true;
-            // }
+            /*Console.WriteLine("Do you want to initiate the handshake? (y/n)");
+            input = Console.ReadLine();
+            if(input == "y"){
+                 iniciator = true;
+            }*/
 
             //Console.WriteLine("Is this device an initiator(y/n):");
             //var respone = Console.ReadLine();
@@ -247,14 +259,14 @@ namespace Computer1
                             }
                             
                         } while (packet_size > 1465 || packet_size < 1);
-                        //string filePath = "/Users/macbook/Desktop/UI Strelec 2a.pdf";
-                        string filePath = "/Users/macbook/Desktop/test.txt";
+                        string filePath = "/Users/macbook/Desktop/UI Strelec 2a.pdf";
+                        //string filePath = "/Users/macbook/Desktop/test.txt";
                         udpClient.SendFile(destination_ip,source_sending_port, destination_listening_port, filePath, packet_size,mistake);
                         StopHeartBeatTimer();
-                        if (iniciator)
+                        /*if (iniciator)
                         {
                             ResetHeartBeatTimer();//TODO: Turned of for testing purposes
-                        }
+                        }*/
                     }
                 }
             }}
@@ -281,9 +293,10 @@ namespace Computer1
 
         private static void OnHeartBeat(object sender, ElapsedEventArgs e)
         {
-            if (heartBeat_count >= 3)
+            if (heartBeat_count > 3)
             {
                 Console.WriteLine("Connection lost");
+                isRunning = false;
                 return;
             }
             //Console.WriteLine($"Hearbeat count: {heartBeat_count}");
