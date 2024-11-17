@@ -48,6 +48,9 @@ namespace Computer1
         public static bool ACK = true;
         public static bool NACK = false;
         public static bool KEEP_ALIVE_ACK = false;
+        public static Thread receiveThread;
+        public static Thread sendThread;
+        
         
 
         static int Main(string[] args)
@@ -103,9 +106,9 @@ namespace Computer1
 
             isRunning = true;
 
-            Thread receiveThread = new Thread(() => receive_thread(source_ip, source_listening_port));
+            receiveThread = new Thread(() => receive_thread(source_ip, source_listening_port));
             receiveThread.Start();
-            Thread sendThread = new Thread(() => send_thread(destination_ip, destination_listening_port));
+            sendThread = new Thread(() => send_thread(destination_ip, destination_listening_port));
             sendThread.Start();
 
 

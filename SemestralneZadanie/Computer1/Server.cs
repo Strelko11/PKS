@@ -28,6 +28,7 @@ public class UDP_server
     public byte[] complete_message;
     public string formattedCrcResult;
     public string formattedHeaderChecksum;
+    private DateTime startTime;
     
 
     public UDP_server(Client client)
@@ -40,6 +41,7 @@ public class UDP_server
         using (UdpClient udpClient = new UdpClient(source_Port))
         {
             IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, source_Port);
+            startTime = DateTime.Now;
 
             while (Program.isRunning)
             {
@@ -50,6 +52,12 @@ public class UDP_server
                     byte type_flag = (byte)((flag >> 4) & 0b1111);
                     byte msg_flag = (byte)(flag & 0b1111);
                     ProcessMessageFlag(type_flag, msg_flag, buffer);
+                    startTime = DateTime.Now;
+                }
+
+                if ((DateTime.Now - startTime).TotalMilliseconds >= 10000 && !Program.iniciator)
+                {
+                    Program.isRunning = false;
                 }
                 
             }
