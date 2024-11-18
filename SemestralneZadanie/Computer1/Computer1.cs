@@ -34,16 +34,16 @@ namespace Computer1
         public static bool handshake_complete = false;
         //public static bool message_received = false;
         //public static bool message_ACK = true;
-        public static bool message_ACK_sent = false;
-        public static bool message_sent = false;
+        //public static bool message_ACK_sent = false;
+        //public static bool message_sent = false;
         public static System.Timers.Timer hearbeatTimer;
         public static int heartBeat_count = 1;
         public static bool keep_alive_sent;
         public static byte[] headerBytes /*= new byte[7]*/;
         //public static Stopwatch stopwatch = new Stopwatch();
         public static ushort packet_size;
-        public static bool stop_wait_ACK = false;
-        public static bool stop_wait_NACK = false;
+        //public static bool stop_wait_ACK = false;
+        //public static bool stop_wait_NACK = false;
         public static bool mistake;
         public static bool ACK = true;
         public static bool NACK = false;
@@ -179,6 +179,7 @@ namespace Computer1
                 }
                 headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK, 1,0);
                 udpClient.SendServiceMessage(destination_ip,source_sending_port, destination_listening_port, headerBytes);
+                Console.WriteLine("ACK packet sent");
                 Console.WriteLine("Handshake complete!");
                 handshake_complete = true;
                 Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n");

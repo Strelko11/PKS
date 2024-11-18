@@ -63,12 +63,12 @@ namespace Computer1
                     // Send message initially
                     udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
 
-                    DateTime startTime = DateTime.Now;
+                    startTime = DateTime.Now;
                     //Program.ACK = false;
                     //Console.WriteLine($"Current thread ID: {Thread.CurrentThread.ManagedThreadId}");
 
                     while (!Program.ACK)
-                         {
+                    {
                             //Thread.Sleep(3000); //TODO: Odkomentovat ak bude treba testovat rychlost pripojenia
                         
                             if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
@@ -110,7 +110,7 @@ namespace Computer1
                                 //Thread.Sleep(1000);
                         
                                 crc_result = checksum_counter(dataToSend, Header.HeaderData.header_size);
-                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.FILE_NAME, 1,Convert.ToUInt16(crc_result,16));
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT,Header.HeaderData.DATA, 1,Convert.ToUInt16(crc_result,16));
                        
                                 Array.Copy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
                                 udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
@@ -118,7 +118,7 @@ namespace Computer1
 
                                 //lastSentPacket = (byte[])dataToSend.Clone()
                             }  
-                         }   
+                    }   
                 }
                 
                 else
@@ -222,7 +222,7 @@ namespace Computer1
                                 //Thread.Sleep(1000);
                         
                                 crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
-                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE,Header.HeaderData.FILE_NAME, 1,Convert.ToUInt16(crc_result,16));
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT,Header.HeaderData.DATA, i + 1,Convert.ToUInt16(crc_result,16));
                        
                                 Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
                                 udpClient.Send(chunk, chunk.Length, remoteEndPoint);
