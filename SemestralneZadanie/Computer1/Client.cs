@@ -247,7 +247,7 @@ namespace Computer1
             while (!Program.ACK)
             {
                 //Thread.Sleep(3000); //TODO: Odkomentovat ak bude treba testovat rychlost pripojenia
-
+                Thread.Sleep(1);
                 if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
                 {
                     if (Program.heartBeat_count > 3)
@@ -293,7 +293,7 @@ namespace Computer1
                     Program.NACK = false;
                     Program.KEEP_ALIVE_ACK = false;
                     int currentChunkSize = Math.Min(packet_size, fileBytes.Length - (i * packet_size));
-                    chunk = new byte[packet_size + Header.HeaderData.header_size];
+                    chunk = new byte[currentChunkSize + Header.HeaderData.header_size];
 
 
                     Array.Copy(fileBytes, i * packet_size, chunk, Header.HeaderData.header_size, currentChunkSize);
@@ -336,7 +336,7 @@ namespace Computer1
                     while (!Program.ACK)
                     {
                         //Thread.Sleep(3000); TODO: Odkomentovat ak bude treba testovat rychlost pripojenia
-
+                        Thread.Sleep(1);
                         if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
                         {
                             if (Program.heartBeat_count > 3)

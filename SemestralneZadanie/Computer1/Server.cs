@@ -290,6 +290,7 @@ public class UDP_server
                 {
                     Console.WriteLine($"Checksum is EQUAL. Sending ACK for packet {header.sequenceNumber}");
                     ACK_message();
+                    file_bytes.Add(fileBytes);
                 }
                 else
                 {
@@ -299,7 +300,7 @@ public class UDP_server
                 }
 
 
-                file_bytes.Add(fileBytes);
+                
 
                 count++; // Increment the fragment count
                 break;
@@ -319,6 +320,7 @@ public class UDP_server
                 {
                     Console.WriteLine($"Checksum is EQUAL. Sending ACK for packet {header.sequenceNumber}");
                     ACK_message();
+                    file_bytes.Add(fileBytes);
                 }
                 else
                 {
@@ -328,7 +330,7 @@ public class UDP_server
                 }
 
 
-                file_bytes.Add(fileBytes);
+                
 
                 count++;
                 Console.WriteLine($"Accessing: {file_path}");
@@ -340,6 +342,7 @@ public class UDP_server
                         fs.Write(chunk, 0, chunk.Length);
                     }
                 }
+                file_bytes.Clear();
 
                 FileInfo fileInfo = new FileInfo(file_path);
 
@@ -357,11 +360,12 @@ public class UDP_server
                 fileBytes = File.ReadAllBytes(file_path);
                 crc_result = checksum_counter(fileBytes, 0);
                 Console.WriteLine(crc_result);
-                file_path = "~/Downloads/";
+                path = "~/Downloads/";
                 Console.WriteLine("********************************************************");
                 Console.WriteLine("Choose an operation(m,f,q)");
 
                 Program.is_sending = false;
+                file_bytes.Clear();
                 break;
             default:
                 Console.WriteLine("Neznamy typ pre subor");
