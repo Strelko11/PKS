@@ -34,6 +34,7 @@ namespace Computer1
         public void SendMessage(string destination_IP, int source_Port, int destination_Port,ushort packet_size, string msg, bool mistake, UdpClient udpClient)
         {
             byte[] messageBytes = Encoding.UTF8.GetBytes(msg);
+            Program.is_sending = true;
            
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
                 Console.WriteLine($"Message beginning to send at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}");
@@ -117,7 +118,14 @@ namespace Computer1
 
                                 //lastSentPacket = (byte[])dataToSend.Clone()
                             }  
-                    }   
+                    }  
+                    if (Program.FIN_received)
+                    {
+                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN_ACK, 1,0);
+                        udpClient.Send(headerBytes, headerBytes.Length, remoteEndPoint);
+                        Program.FIN_ACK = true;
+                        //udpClient.Send(destination_IP,source_Port, destination_Port, headerBytes);
+                    }
                 }
                 
                 else
@@ -238,19 +246,26 @@ namespace Computer1
                     Console.WriteLine(
                         $"\nSent message from port {source_Port} to {destination_IP} with port {destination_Port} : {msg}");
                 }
-            
+                if (Program.FIN_received)
+                {
+                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN_ACK, 1,0);
+                    udpClient.Send(headerBytes, headerBytes.Length, remoteEndPoint);
+                    Program.FIN_ACK = true;
+                    //udpClient.Send(destination_IP,source_Port, destination_Port, headerBytes);
+                }
+            Program.is_sending = false;
         }
 
         public void SendFile(string destination_IP, int source_Port, int destination_Port, string filePath,
-            ushort packet_size, bool mistake)
+            ushort packet_size, bool mistake, UdpClient udpClient)
         {
             //file_sent = true;
+            Program.is_sending = true;
 
             Console.WriteLine($"File sent at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}");
 
             byte[] fileBytes = File.ReadAllBytes(filePath);
-            using (UdpClient udpClient = new UdpClient(source_Port))
-            {
+            
                 Program.ACK = false;
                 Program.NACK = false;
                 Program.KEEP_ALIVE_ACK = false;
@@ -450,10 +465,17 @@ namespace Computer1
                     Console.WriteLine($"Total file Size: {fileSizeInBytes} bytes");
                 }
                 }
-                
-            }
+
+                if (Program.FIN_received)
+                {
+                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN_ACK, 1,0);
+                    udpClient.Send(headerBytes, headerBytes.Length, remoteEndPoint);
+                    Program.FIN_ACK = true;
+                    //udpClient.Send(destination_IP,source_Port, destination_Port, headerBytes);
+                }
 
             //file_sent = false;
+            Program.is_sending = false;
         }
 
         public void SendServiceMessage(string destination_IP, int source_Port, int destination_Port, byte[] headerBytes, UdpClient udpClient)
@@ -461,12 +483,8 @@ namespace Computer1
             byte[] dataToSend = new byte[headerBytes.Length];
 
             Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
-
-
-            
-                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
-
-                udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
+            IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
+            udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
                 
                 //Console.WriteLine(
                     //$"Sent service message from port {source_Port} to {destination_IP}:{destination_Port}");

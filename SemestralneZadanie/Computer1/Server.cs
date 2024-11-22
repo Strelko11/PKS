@@ -54,11 +54,13 @@ public class UDP_server
                     ProcessMessageFlag(type_flag, msg_flag, buffer);
                     startTime = DateTime.Now;
                 }
-
-                if ((DateTime.Now - startTime).TotalMilliseconds >= 10000 && !Program.iniciator)
+                else if ((DateTime.Now - startTime).TotalMilliseconds >= 15000 && !Program.iniciator)
                 {
                     Program.isRunning = false;
+                    Console.WriteLine("Waiting too long for some message. Connection lost");
+                    Console.WriteLine("Press ENTER to exit...");
                 }
+                
                 
             }
             
@@ -89,9 +91,17 @@ public class UDP_server
         switch (msg_flag)
         {
             case 0b0000:
-                Program.handshake_SYN = true;
-                Console.WriteLine("SYN packet received");
-                RespondToSYN();
+                if (!Program.handshake_complete)
+                {
+                    Program.handshake_SYN = true;
+                    Console.WriteLine("SYN packet received");
+                    RespondToSYN();
+                }
+                else
+                {
+                    Console.WriteLine("Handshake already initiated");
+                }
+                
                 break;
             case 0b0010:
                 Program.handshake_SYN_ACK = true;
@@ -100,9 +110,10 @@ public class UDP_server
                 //Console.WriteLine("Tu som sa dostal");
                 break;
             case 0b0011:
-                //Console.WriteLine("Servisna sprava ACK");
+                Console.WriteLine("Servisna sprava ACK");
                 if (!Program.handshake_complete)
                 {
+                    Console.WriteLine("tu som 1");
                     Console.WriteLine("ACK packet received");
                     Program.handshake_ACK = true;
                     Console.WriteLine("**************** HANDSHAKE COMPLETE *************\n\n");
@@ -110,6 +121,7 @@ public class UDP_server
                 }
                 else if (Program.keep_alive_sent)
                 {
+                    Console.WriteLine("tu som 2");
                     Program.keep_alive_sent = false;
                     Program.KEEP_ALIVE_ACK = true;
                     Program.heartBeat_count--;
@@ -118,21 +130,42 @@ public class UDP_server
                         Program.heartBeat_count = 1;
                     }
                 }
+                else if (Program.FIN_ACK && (Program.FIN_received || Program.FIN_sent))
+                {
+                    Console.WriteLine("tu som 3");
+                    Program.isRunning = false;
+                    Console.WriteLine("Connection closed");
+                    Console.WriteLine("Press ENTER to exit...");
+                    Program.StopHeartBeatTimer();
+                }
                 else
                 {
+                    Console.WriteLine("tu som 4");
                     Program.NACK = false;
                     Program.ACK = true;
                 }
-
-                
-
-                
                 break;
             case 0b1001:
-                //Console.WriteLine("Recived NACK");
+                Console.WriteLine("Recived NACK");
                 Program.NACK = true;
                 Program.ACK = false;
                 //Console.WriteLine("TI DRBE");
+                break;
+            case 0b0101:
+                Console.WriteLine("Received FIN");
+                Program.FIN_received = true;
+                if (!Program.is_sending)
+                {
+                    send_FIN_ACK();
+                    Program.FIN_ACK = true;
+                }
+                break;
+            case 0b0110:
+                Console.WriteLine("Received FIN_ACK");
+                ACK_message();
+                Console.WriteLine("Connection closed");
+                Console.WriteLine("Press ENTER to exit...");
+                Program.isRunning = false;
                 break;
             case 0b1000:
                 //Console.WriteLine("Servisna sprava KEEP_ALIVE");
@@ -240,11 +273,13 @@ public class UDP_server
     }
 
     public void ProcessFileMessage(byte[] buffer, byte msg_flag)
-    {   
+    {
+        //file_path = "/Users/macbook/Downloads/";
         //Thread.Sleep(2000);
         switch (msg_flag)
         {
             case 0b1011://####################################################################FILE NAME //TODO: Osetrit chybu ale nevytvarat
+                Program.is_sending = true;
                 file_name = Encoding.UTF8.GetString(buffer, Header.HeaderData.header_size, buffer.Length - Header.HeaderData.header_size);
                 
                 var header = extract_header(buffer);
@@ -318,11 +353,10 @@ public class UDP_server
             
             case 0b1111://###################################################################################LAST FRAGMENT
                 header = extract_header(buffer);
-                Console.WriteLine("All fragments received. Final file information:");
                 fileBytes = new byte[buffer.Length - Header.HeaderData.header_size];
                 Buffer.BlockCopy(buffer, Header.HeaderData.header_size, fileBytes, 0, fileBytes.Length);
                 
-                //crc_result = checksum_counter(fileBytes, 0);
+                crc_result = checksum_counter(fileBytes, 0);
                 //Console.Write("CRC16 (current fragment): ");
                 //Console.WriteLine(crc_result);
                 //Console.WriteLine($"Calculated CRC16: {crc_result}");
@@ -350,13 +384,14 @@ public class UDP_server
                 file_bytes.Add(fileBytes);
 
                 count++;
+                Console.WriteLine($"Accessing: {file_path}");
 
                 //Console.WriteLine($"Received fragment and appended to the file. Fragment {count} received.");
                 using (FileStream fs = new FileStream(file_path, FileMode.Create, FileAccess.Write))
                 {
-                    foreach (byte[] file_bytes in file_bytes)
+                    foreach (byte[] chunk in file_bytes)
                     {
-                        fs.Write(file_bytes, 0, file_bytes.Length);
+                        fs.Write(chunk, 0, chunk.Length);
                     }
                 }
                 //File.WriteAllBytes(file_path, file_bytes);
@@ -365,7 +400,7 @@ public class UDP_server
 
                 // Get the file size in bytes
                 long fileSizeInBytes = fileInfo.Length;
-
+                Console.WriteLine("All fragments received. Final file information:");
                 Console.WriteLine($"File Size: {fileSizeInBytes} bytes");
 
                 var receiveTime = DateTime.UtcNow;
@@ -376,13 +411,17 @@ public class UDP_server
                 fileBytes = File.ReadAllBytes(file_path);
                 crc_result = checksum_counter(fileBytes, 0);
                 Console.WriteLine(crc_result);
+                file_path = "/Users/macbook/Downloads/";
                 Console.WriteLine("********************************************************");
                 Console.WriteLine("Choose an operation(m,f,q)");
                 
+                Program.is_sending = false;
                 break;
             default:
                 Console.WriteLine("Neznamy typ pre subor");
                 break;
+            
+            
         }
     }
 
@@ -446,6 +485,14 @@ public class UDP_server
         Header.HeaderData responseHeader = new Header.HeaderData();
         byte[] headerBytes = responseHeader.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.NACK, 1,0);
         client.SendServiceMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, headerBytes,Program.udpClient);
+    }
+
+    public void send_FIN_ACK()
+    {
+        Header.HeaderData responseHeader = new Header.HeaderData();
+        byte[] headerBytes = responseHeader.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN_ACK,1,0);
+        client.SendServiceMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, headerBytes, Program.udpClient);
+        Program.FIN_ACK = true;
     }
 
     /*private void ACK_with_checksum()

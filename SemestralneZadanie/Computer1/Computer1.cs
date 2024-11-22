@@ -51,6 +51,11 @@ namespace Computer1
         public static bool KEEP_ALIVE_ACK = false;
         public static Thread receiveThread;
         public static Thread sendThread;
+        public static bool FIN_received = false;
+        public static bool FIN_sent = false;
+        public static bool FIN_ACK = false;
+        //public static bool ACK_FIN = false;
+        public static bool is_sending = false;
         
         
 
@@ -179,6 +184,7 @@ namespace Computer1
                 {
                     headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN, 1,0);
                     client.SendServiceMessage(destination_ip,source_sending_port, destination_listening_port, headerBytes,udpClient);
+                    Thread.Sleep(100);
                 }
                 headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK, 1,0);
                 client.SendServiceMessage(destination_ip,source_sending_port, destination_listening_port, headerBytes,udpClient);
@@ -204,11 +210,15 @@ namespace Computer1
                     string command = Console.ReadLine();
                     if (command == "q")
                     {
+                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN, 1,0);
+                        client.SendServiceMessage(destination_ip,source_sending_port, destination_listening_port, headerBytes,udpClient);
+                        FIN_sent = true;
+                        
                         //Console.In.Close();
                         //udpClient.SendMessage(source_ip, source_sending_port, source_listening_port, 0,"exit", mistake);
-                        isRunning = false;
+                        //isRunning = false;
                         //cts.Cancel();
-                        continue;
+                        //continue;
                     }
 
                     if (command == "m")
@@ -268,7 +278,7 @@ namespace Computer1
                         } while (packet_size > 1465 || packet_size < 1);
                         string filePath = "/Users/macbook/Desktop/UI Strelec 2a.pdf";
                         //string filePath = "/Users/macbook/Desktop/test.txt";
-                        client.SendFile(destination_ip,source_sending_port, destination_listening_port, filePath, packet_size,mistake);
+                        client.SendFile(destination_ip,source_sending_port, destination_listening_port, filePath, packet_size,mistake, udpClient);
                         StopHeartBeatTimer();
                         /*if (iniciator)
                         {
@@ -314,7 +324,7 @@ namespace Computer1
             heartBeat_count++;
         }
 
-        private static void ResetHeartBeatTimer()
+        public static void ResetHeartBeatTimer()
         {
             if (isRunning)
             {
@@ -323,7 +333,7 @@ namespace Computer1
             }
         }
         
-        private static void StopHeartBeatTimer()
+        public static void StopHeartBeatTimer()
         {
             if (hearbeatTimer != null && hearbeatTimer.Enabled)
             {
@@ -332,7 +342,7 @@ namespace Computer1
         }
 
 
-        private static void StartHeartBeatTimer()
+        public static void StartHeartBeatTimer()
         {
             if (hearbeatTimer != null && !hearbeatTimer.Enabled)
             {
