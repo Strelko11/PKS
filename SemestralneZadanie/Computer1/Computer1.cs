@@ -16,8 +16,9 @@ namespace Computer1
 {
     class Program
     {
-        private static Client udpClient;
-        private static UDP_server udpServer;
+        private static Client client = new Client(server);
+        private static UDP_server server = new UDP_server(client);
+        public static UdpClient udpClient;
         public static string destination_ip;
         private static string source_ip = "192.168.1.2";
         public static int destination_listening_port;
@@ -50,7 +51,6 @@ namespace Computer1
         public static bool KEEP_ALIVE_ACK = false;
         public static Thread receiveThread;
         public static Thread sendThread;
-        
         
         
 
@@ -106,12 +106,7 @@ namespace Computer1
             string respone = args[5];
 
             isRunning = true;
-            
-            udpServer = new UDP_server(source_sending_port);
-        
-            // Start the server, which will internally interact with Client
-            
-            
+            udpClient = new UdpClient(source_sending_port);
 
             receiveThread = new Thread(() => receive_thread(source_ip, source_listening_port));
             receiveThread.Start();
@@ -168,6 +163,7 @@ namespace Computer1
             sendThread.Join();
             //Console.WriteLine("Exited send thread");
             receiveThread.Join();
+            udpClient.Close();
             Console.WriteLine("Exiting");
             return 0;
 
@@ -182,10 +178,10 @@ namespace Computer1
                 while (!handshake_SYN_ACK)
                 {
                     headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN, 1,0);
-                    udpClient.SendServiceMessage(destination_ip,source_sending_port, destination_listening_port, headerBytes);
+                    client.SendServiceMessage(destination_ip,source_sending_port, destination_listening_port, headerBytes,udpClient);
                 }
                 headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK, 1,0);
-                udpClient.SendServiceMessage(destination_ip,source_sending_port, destination_listening_port, headerBytes);
+                client.SendServiceMessage(destination_ip,source_sending_port, destination_listening_port, headerBytes,udpClient);
                 Console.WriteLine("ACK packet sent");
                 Console.WriteLine("Handshake complete!");
                 handshake_complete = true;
@@ -202,7 +198,7 @@ namespace Computer1
             {
                 if (handshake_complete && ACK)
                 {
-                    StartHeartBeatTimer();                                          
+                    StartHeartBeatTimer();
                     Console.WriteLine("********************************************************");
                     Console.WriteLine("Choose an operation(m,f,q)");
                     string command = Console.ReadLine();
@@ -238,7 +234,7 @@ namespace Computer1
                             }
                             
                         } while (packet_size > 1465 || packet_size < 1);
-                        udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port,packet_size, message, mistake, command);
+                        client.SendMessage(destination_ip,source_sending_port, destination_listening_port,packet_size, message, mistake, udpClient);
                         //udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, headerBytes);
                         //Console.WriteLine("Waiting for ACK");
                         StopHeartBeatTimer();
@@ -272,7 +268,7 @@ namespace Computer1
                         } while (packet_size > 1465 || packet_size < 1);
                         string filePath = "/Users/macbook/Desktop/UI Strelec 2a.pdf";
                         //string filePath = "/Users/macbook/Desktop/test.txt";
-                        udpClient.SendFile(destination_ip,source_sending_port, destination_listening_port, filePath, packet_size,mistake);
+                        client.SendFile(destination_ip,source_sending_port, destination_listening_port, filePath, packet_size,mistake);
                         StopHeartBeatTimer();
                         /*if (iniciator)
                         {
@@ -291,7 +287,7 @@ namespace Computer1
             while (isRunning)
             {
                 //header.SetType(Header.HeaderData.TEST);
-                udpServer.Start(source_ip, source_port);
+                server.Start(source_ip, source_port);
                
                 if (iniciator)
                 {
@@ -312,7 +308,7 @@ namespace Computer1
             }
             //Console.WriteLine($"Hearbeat count: {heartBeat_count}");
             headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.KEEP_ALIVE, 1, 0);
-            udpClient.SendServiceMessage(destination_ip, source_sending_port, destination_listening_port, headerBytes);
+            client.SendServiceMessage(destination_ip, source_sending_port, destination_listening_port, headerBytes,udpClient);
             //udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, 0,"KEEP_Alive", mistake);
             keep_alive_sent = true;
             heartBeat_count++;
