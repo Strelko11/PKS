@@ -14,7 +14,8 @@ public class UDP_server
     public uint combined_sequence_number;
     public ushort combined_checksum;
     public string file_name;
-    public string file_path = "/Users/macbook/Downloads/";
+    public string path = "~/Downloads/";
+    public string file_path;
     public List<byte[]> file_bytes = new List<byte[]>();
     public List<byte[]> message_bytes = new List<byte[]>();
     public byte[] fileBytes;
@@ -265,6 +266,7 @@ public class UDP_server
                 }
 
                 Console.WriteLine($"File name is : {file_name}");
+                file_path = path.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
                 file_path += file_name;
                 Console.WriteLine($"File path is : {file_path}");
                 if (File.Exists(file_path))
@@ -355,7 +357,7 @@ public class UDP_server
                 fileBytes = File.ReadAllBytes(file_path);
                 crc_result = checksum_counter(fileBytes, 0);
                 Console.WriteLine(crc_result);
-                file_path = "/Users/macbook/Downloads/";
+                file_path = "~/Downloads/";
                 Console.WriteLine("********************************************************");
                 Console.WriteLine("Choose an operation(m,f,q)");
 
