@@ -25,18 +25,28 @@ namespace Computer1
         //private CrcAlgorithm crc = CrcAlgorithm.CreateCrc16CcittFalse();
         byte[] lastSentPacket = null;
         private DateTime startTime;
+        private static UdpClient udpClient;
 
 
-        public Client(UDP_server udpServer)
+        public Client(UDP_server udpServer, int sourcePort)
         {
-            this.udpServer = udpServer;
+            this.udpServer = udpServer;  // Store the UDP_server reference
+            udpClient = new UdpClient(sourcePort);  // Initialize UdpClient
         }
-        public void SendMessage(string destination_IP, int source_Port, int destination_Port,ushort packet_size, string msg, bool mistake)
+
+        // Setter to accept a reference of UDP_server
+        public void SetServer(UDP_server server)
+        {
+            udpServer = server;
+        }
+        public void SendMessage(string destination_IP, int source_Port, int destination_Port,ushort packet_size, string msg, bool mistake, string command)
         {
             byte[] messageBytes = Encoding.UTF8.GetBytes(msg);
-            using (UdpClient udpClient = new UdpClient(source_Port))
-            {
+           
+               
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
+                udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
                 Console.WriteLine($"Message beginning to send at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}");
                 Console.WriteLine($"Sent message \"{msg}\" from {destination_IP} and {source_Port} to {destination_Port}.");
                 if (messageBytes.Length < packet_size && msg != "exit")
@@ -239,7 +249,7 @@ namespace Computer1
                     Console.WriteLine(
                         $"\nSent message from port {source_Port} to {destination_IP} with port {destination_Port} : {msg}");
                 }
-            }
+            
         }
 
         public void SendFile(string destination_IP, int source_Port, int destination_Port, string filePath,
@@ -250,8 +260,7 @@ namespace Computer1
             Console.WriteLine($"File sent at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}");
 
             byte[] fileBytes = File.ReadAllBytes(filePath);
-            using (UdpClient udpClient = new UdpClient(source_Port))
-            {
+            
                 Program.ACK = false;
                 Program.NACK = false;
                 Program.KEEP_ALIVE_ACK = false;
@@ -452,29 +461,27 @@ namespace Computer1
                 }
                 }
                 
-            }
+            
 
             //file_sent = false;
         }
 
-        public void SendServiceMessage(string destination_IP, int source_Port, int destination_Port, byte[] headerBytes)
+        public void  SendServiceMessage(string destination_IP, int source_Port, int destination_Port, byte[] headerBytes)
         {
             byte[] dataToSend = new byte[headerBytes.Length];
 
             Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
+            
+            IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
+                //udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
 
-            using (UdpClient udpClient = new UdpClient(source_Port))
-            {
-                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
-
-                udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
+            udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
                 
                 //Console.WriteLine(
                     //$"Sent service message from port {source_Port} to {destination_IP}:{destination_Port}");
-                //Console.WriteLine($"Message sent at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}");
-
-            }
+                //Console.WriteLine($"Message sent at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}")
+            
         }
 
         public string checksum_counter(byte[] crc_bytes, int padding_bytes)

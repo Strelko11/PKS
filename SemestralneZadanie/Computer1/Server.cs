@@ -29,11 +29,13 @@ public class UDP_server
     public string formattedCrcResult;
     public string formattedHeaderChecksum;
     private DateTime startTime;
+    private Client udpClient;  // Reference to the Client class
+
     
 
-    public UDP_server(Client client)
+    public UDP_server(int sourcePort)
     {
-        this.client = client;
+        udpClient = new Client(this, sourcePort);  // Create a Client instance and pass current Server reference
     }
 
     public void Start(string source_IP, int source_Port)
@@ -55,9 +57,11 @@ public class UDP_server
                     startTime = DateTime.Now;
                 }
 
-                if ((DateTime.Now - startTime).TotalMilliseconds >= 10000 && !Program.iniciator)
+                if ((DateTime.Now - startTime).TotalMilliseconds >= 15000 && !Program.iniciator)
                 {
                     Program.isRunning = false;
+                    Console.WriteLine("Connection lost. Nothing has been received for 15 seconds.");
+                    Console.WriteLine("Press ENTER to quit program...");
                 }
                 
             }
@@ -427,14 +431,14 @@ public class UDP_server
         Console.WriteLine("Sending SYN-ACK in response to SYN...");
         Header.HeaderData responseHeader = new Header.HeaderData();
         byte[] headerBytes = responseHeader.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN_ACK, 1,0);
-        client.SendServiceMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, headerBytes);
+        udpClient.SendServiceMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, headerBytes);
     }
 
     private void ACK_message(){
         //Console.WriteLine("Sent ACK for received message");
         Header.HeaderData responseHeader = new Header.HeaderData();
         byte[] headerBytes = responseHeader.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK,1,0);
-        client.SendServiceMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, headerBytes);
+        udpClient.SendServiceMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, headerBytes);
         //Program.message_ACK_sent = true;
         //Console.WriteLine("********************************************************");
         //Console.WriteLine("Choose an operation(m,f,q)");
@@ -445,7 +449,7 @@ public class UDP_server
         //Console.WriteLine("Sending NACK");
         Header.HeaderData responseHeader = new Header.HeaderData();
         byte[] headerBytes = responseHeader.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.NACK, 1,0);
-        client.SendServiceMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, headerBytes);
+        udpClient.SendServiceMessage(Program.destination_ip,Program.source_sending_port, Program.destination_listening_port, headerBytes);
     }
 
     /*private void ACK_with_checksum()
@@ -456,21 +460,5 @@ public class UDP_server
     
 }
 
-/*if (!Client.ACK_file)
-                {
-                    Client.ACK_file = true;
-                }
-
-                if (Program.stop_wait_NACK)
-                {
-                    Program.stop_wait_NACK = false;
-                    Program.stop_wait_ACK = true;
-                }
-
-                if (Client.file_sent)
-                {
-                    Client.NACK_file = false;
-                    Client.ACK_file = true;
-                }*/
 
         

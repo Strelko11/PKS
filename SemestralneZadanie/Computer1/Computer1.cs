@@ -16,8 +16,8 @@ namespace Computer1
 {
     class Program
     {
-        private static Client udpClient = new Client(udpServer);
-        private static UDP_server udpServer = new UDP_server(udpClient);
+        private static Client udpClient;
+        private static UDP_server udpServer;
         public static string destination_ip;
         private static string source_ip = "192.168.1.2";
         public static int destination_listening_port;
@@ -50,6 +50,7 @@ namespace Computer1
         public static bool KEEP_ALIVE_ACK = false;
         public static Thread receiveThread;
         public static Thread sendThread;
+        
         
         
 
@@ -105,6 +106,12 @@ namespace Computer1
             string respone = args[5];
 
             isRunning = true;
+            
+            udpServer = new UDP_server(source_sending_port);
+        
+            // Start the server, which will internally interact with Client
+            
+            
 
             receiveThread = new Thread(() => receive_thread(source_ip, source_listening_port));
             receiveThread.Start();
@@ -195,7 +202,7 @@ namespace Computer1
             {
                 if (handshake_complete && ACK)
                 {
-                    StartHeartBeatTimer();
+                    StartHeartBeatTimer();                                          
                     Console.WriteLine("********************************************************");
                     Console.WriteLine("Choose an operation(m,f,q)");
                     string command = Console.ReadLine();
@@ -231,7 +238,7 @@ namespace Computer1
                             }
                             
                         } while (packet_size > 1465 || packet_size < 1);
-                        udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port,packet_size, message, mistake);
+                        udpClient.SendMessage(destination_ip,source_sending_port, destination_listening_port,packet_size, message, mistake, command);
                         //udpClient.SendMessage(destination_ip, source_sending_port, destination_listening_port, message, headerBytes);
                         //Console.WriteLine("Waiting for ACK");
                         StopHeartBeatTimer();
