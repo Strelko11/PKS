@@ -13,3 +13,21 @@
 /Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.pdb
 /Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.genruntimeconfig.cache
 /Users/macbook/Desktop/Desktop - Adam’s MacBook Pro/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/ref/Computer1.dll
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/bin/Debug/net8.0/Computer1
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/bin/Debug/net8.0/Computer1.deps.json
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/bin/Debug/net8.0/Computer1.runtimeconfig.json
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/bin/Debug/net8.0/Computer1.dll
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/bin/Debug/net8.0/Computer1.pdb
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/bin/Debug/net8.0/InvertedTomato.Crc.dll
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.csproj.AssemblyReference.cache
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.GeneratedMSBuildEditorConfig.editorconfig
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.AssemblyInfoInputs.cache
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.AssemblyInfo.cs
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.csproj.CoreCompileInputs.cache
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.sourcelink.json
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.csproj.Up2Date
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.dll
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/refint/Computer1.dll
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.pdb
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/Computer1.genruntimeconfig.cache
+/Users/macbook/Desktop/FIIT/PKS/SemestralneZadanie/Computer1/obj/Debug/net8.0/ref/Computer1.dll

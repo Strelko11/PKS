@@ -1,0 +1,41 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "Computer1/1.0.0": {
+        "dependencies": {
+          "InvertedTomato.Crc": "1.4.1"
+        },
+        "runtime": {
+          "Computer1.dll": {}
+        }
+      },
+      "InvertedTomato.Crc/1.4.1": {
+        "runtime": {
+          "lib/net8.0/InvertedTomato.Crc.dll": {
+            "assemblyVersion": "1.4.1.0",
+            "fileVersion": "1.4.1.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Computer1/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "InvertedTomato.Crc/1.4.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-MGezrXVao8LKzCBRI/5WwWfjRhii4CWc5Pq5r0HfB++33u9XjEYBDSFS8oJZESTOhI9Z5L2i2TvA1r2FXbqPSw==",
+      "path": "invertedtomato.crc/1.4.1",
+      "hashPath": "invertedtomato.crc.1.4.1.nupkg.sha512"
+    }
+  }
+}
