@@ -87,7 +87,7 @@ namespace Computer1
                     {
                         Program.KEEP_ALIVE_ACK = false;
                         Program.NACK = false;
-                        Console.WriteLine("RESENT PACKET XD");
+                        Console.WriteLine($"RESENT PACKET with seguence number {1} and payload size {packet_size}"); 
 
                         crc_result = checksum_counter(dataToSend, Header.HeaderData.header_size);
                         headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA, 1,
@@ -189,7 +189,7 @@ namespace Computer1
                         {
                             Program.KEEP_ALIVE_ACK = false;
                             Program.NACK = false;
-                            Console.WriteLine("RESENT PACKET XD");
+                            Console.WriteLine($"RESENT PACKET with seguence number {i + 1} and payload size {currentChunkSize}"); 
 
                             crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
                             headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA, i + 1,
@@ -274,7 +274,7 @@ namespace Computer1
                 {
                     Program.KEEP_ALIVE_ACK = false;
                     Program.NACK = false;
-                    Console.WriteLine("RESENT PACKET XD");
+                    Console.WriteLine($"RESENT PACKET with seguence number {1} and payload size {dataToSend.Length}"); 
 
                     crc_result = checksum_counter(dataToSend, Header.HeaderData.header_size);
                     headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE, Header.HeaderData.FILE_NAME, 1,
@@ -361,7 +361,7 @@ namespace Computer1
                         {
                             Program.KEEP_ALIVE_ACK = false;
                             Program.NACK = false;
-                            Console.WriteLine("RESENT PACKET XD");
+                            Console.WriteLine($"RESENT PACKET with seguence number {i + 1} and payload size {currentChunkSize}"); 
 
                             crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
                             headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE, Header.HeaderData.DATA, i + 1,

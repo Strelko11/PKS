@@ -40,6 +40,7 @@ namespace Computer1
         public static bool is_sending = false;
         public static string input;
         static DateTime lastSentTime = DateTime.MinValue;
+        public static string filePath;
 
 
 
@@ -211,7 +212,7 @@ namespace Computer1
                                     Console.WriteLine("Invalid input. Try again!");
                                 }
                             } while (true);
-                            Console.WriteLine("Enter packet size(1-1465 bytes): ");
+                            Console.WriteLine("Enter packet size(1-1466 bytes): ");
                             do
                             {
                                 input = Console.ReadLine();
@@ -251,7 +252,7 @@ namespace Computer1
                                 }
                             } while (true);
 
-                            Console.WriteLine("Enter packet size(1-1465 bytes): ");
+                            Console.WriteLine("Enter packet size(1-1466 bytes): ");
                             do
                             {
                                input = Console.ReadLine();
@@ -262,7 +263,22 @@ namespace Computer1
                                 Console.WriteLine("Invalid packet size. Enter again:");
                             } while (true);
 
-                            string filePath = "/Users/macbook/Desktop/Umela_inteligencia_1.pdf";
+                            do
+                            {
+                                Console.WriteLine("Enter the path to the file you want to send: ");
+                                filePath = Console.ReadLine();
+
+                                if (File.Exists(filePath))
+                                {
+                                    Console.WriteLine("File found. Ready to send.");
+                                    break;
+                                }
+                                else
+                                {
+                                    Console.WriteLine("File not found. Please try again.");
+                                }
+                            } while (true);
+                            //string filePath = "/Users/macbook/Desktop/Umela_inteligencia_1.pdf"; // TODO: Prerobit nech si uzivatel vyberie
                             client.SendFile(destination_ip, source_sending_port, destination_listening_port, filePath,
                                 packet_size, mistake, udpClient);
                         }
