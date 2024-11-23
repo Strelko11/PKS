@@ -98,12 +98,12 @@ namespace Computer1
                  iniciator = true;
             }
 
-            Console.WriteLine("Is this device an initiator(y/n):");
+            /*Console.WriteLine("Is this device an initiator(y/n):");
             var respone = Console.ReadLine();
             if (respone == "y")
             {
                 iniciator = true;
-            }
+            }*/
 
             Console.WriteLine("\n\n\n\n********************************************************************");
             Console.WriteLine("After both devices have been set up:");
