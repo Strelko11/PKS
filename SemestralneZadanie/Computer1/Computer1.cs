@@ -38,23 +38,14 @@ namespace Computer1
         public static bool FIN_sent = false;
         public static bool FIN_ACK = false;
         public static bool is_sending = false;
+        public static string input;
+        static DateTime lastSentTime = DateTime.MinValue;
+
 
 
         static int Main(string[] args)
         {
-            /*UdpClient client = new UdpClient();
-            client.Connect("192.168.1.3", 5000); // Replace with your server IP
-
-            Console.WriteLine("Enter message:");
-            string message = Console.ReadLine();
-            byte[] data = Encoding.UTF8.GetBytes(message);
-
-            // Debugging output before sending
-            Console.WriteLine($"Sending message: {message} to {client.Client.RemoteEndPoint}");
-
-            client.Send(data, data.Length);
-            client.Close();*/
-            /*Console.WriteLine("Enter source IP address:");
+            Console.WriteLine("Enter source IP address:");
             source_ip = Console.ReadLine();
 
             Console.WriteLine("Enter destination IP address:");
@@ -75,10 +66,10 @@ namespace Computer1
 
             Console.WriteLine("Enter source sending port:");
             input = Console.ReadLine();
-            source_sending_port = int.Parse(input);*/
+            source_sending_port = int.Parse(input);
 
 
-            if (args.Length < 5)
+            /*if (args.Length < 5)
             {
                 Console.WriteLine(
                     "Usage: <destination_ip> <destination_listening_port> <destination_sending_port> <source_listening_port> <source_sending_port>");
@@ -90,7 +81,7 @@ namespace Computer1
             destination_sending_port = int.Parse(args[2]);
             source_listening_port = int.Parse(args[3]);
             source_sending_port = int.Parse(args[4]);
-            string respone = args[5];
+            string respone = args[5];*/
 
             isRunning = true;
             udpClient = new UdpClient(source_sending_port);
@@ -101,14 +92,14 @@ namespace Computer1
             sendThread.Start();
 
 
-            /*Console.WriteLine("Do you want to initiate the handshake? (y/n)");
+            Console.WriteLine("Do you want to initiate the handshake? (y/n)");
             input = Console.ReadLine();
             if(input == "y"){
                  iniciator = true;
-            }*/
+            }
 
-            //Console.WriteLine("Is this device an initiator(y/n):");
-            //var respone = Console.ReadLine();
+            Console.WriteLine("Is this device an initiator(y/n):");
+            var respone = Console.ReadLine();
             if (respone == "y")
             {
                 iniciator = true;
@@ -131,17 +122,17 @@ namespace Computer1
 
             if (handshake_complete && iniciator)
             {
-                hearbeatTimer = new System.Timers.Timer(5000); // 5000 milliseconds (5 seconds)
-                hearbeatTimer.Elapsed += OnHeartBeat; // Subscribe to the Elapsed event
-                hearbeatTimer.AutoReset = true; // Make the timer repeat
-                hearbeatTimer.Enabled = true; // Start the timer
+                hearbeatTimer = new System.Timers.Timer(5000); 
+                hearbeatTimer.Elapsed += OnHeartBeat; 
+                hearbeatTimer.AutoReset = true; 
+                hearbeatTimer.Enabled = true; 
             }
 
 
             sendThread.Join();
             receiveThread.Join();
             udpClient.Close();
-            Console.WriteLine("Exiting");
+            Console.WriteLine("Bye Bye");
             return 0;
         }
 
@@ -153,10 +144,16 @@ namespace Computer1
                 Console.WriteLine("SYN packet sent");
                 while (!handshake_SYN_ACK)
                 {
-                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN, 1, 0);
-                    client.SendServiceMessage(destination_ip, source_sending_port, destination_listening_port,
-                        headerBytes, udpClient);
-                    Thread.Sleep(100);
+                    // Check if 5 seconds have passed since the last message was sent
+                    if ((DateTime.Now - lastSentTime).TotalSeconds >= 5)
+                    {
+                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN, 1, 0);
+                        client.SendServiceMessage(destination_ip, source_sending_port, destination_listening_port,
+                            headerBytes, udpClient);
+                        lastSentTime = DateTime.Now; // Update the last sent time
+                    }
+
+                    Thread.Sleep(1); // Prevent tight looping
                 }
 
                 headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK, 1, 0);
@@ -172,12 +169,13 @@ namespace Computer1
 
         public static void send_thread(string destination_ip, int destination_listening_port)
         {
+            StartHeartBeatTimer();
             while (isRunning)
             {
                 {
                     if (handshake_complete && ACK)
                     {
-                        StartHeartBeatTimer();
+                        
                         Console.WriteLine("********************************************************");
                         Console.WriteLine("Choose an operation(m,f,q)");
                         string command = Console.ReadLine();
@@ -193,64 +191,86 @@ namespace Computer1
                         {
                             Console.WriteLine("Type message:");
                             message = Console.ReadLine();
-                            Console.WriteLine("Do you want to create a mistake? (y/n)");
-                            if (Console.ReadLine() == "y")
+                            do
                             {
-                                mistake = true;
-                            }
-                            else
-                            {
-                                mistake = false;
-                            }
+                                Console.WriteLine("Do you want to create a mistake? (y/n):");
+                                input = Console.ReadLine()?.ToLower(); 
 
+                                if (input == "y")
+                                {
+                                    mistake = true;
+                                    break; 
+                                }
+                                if (input == "n")
+                                {
+                                    mistake = false;
+                                    break; 
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Invalid input. Try again!");
+                                }
+                            } while (true);
                             Console.WriteLine("Enter packet size(1-1465 bytes): ");
                             do
                             {
-                                packet_size = ushort.Parse(Console.ReadLine());
-                                if (packet_size > 1465 || packet_size < 1)
+                                input = Console.ReadLine();
+                                //packet_size = Console.ReadLine();
+                                if (ushort.TryParse(input, out packet_size) && packet_size >= 1 && packet_size <= 1465)
                                 {
-                                    Console.WriteLine("Invalid packet size. Enter again:");
+                                    break; // Valid input, exit the loop
                                 }
-                            } while (packet_size > 1465 || packet_size < 1);
+                                Console.WriteLine("Invalid packet size. Enter again:");
+                            } while (true);
 
                             client.SendMessage(destination_ip, source_sending_port, destination_listening_port,
                                 packet_size, message, mistake, udpClient);
-                            StopHeartBeatTimer();
                         }
 
                         if (command == "f")
                         {
                             Console.WriteLine("Sending files");
-                            Console.WriteLine("Do you want to create a mistake? (y/n)");
-                            if (Console.ReadLine() == "y")
+                            do
                             {
-                                mistake = true;
-                            }
-                            else
-                            {
-                                mistake = false;
-                            }
+                                Console.WriteLine("Do you want to create a mistake? (y/n):");
+                                input = Console.ReadLine()?.ToLower(); 
+
+                                if (input == "y")
+                                {
+                                    mistake = true;
+                                    break; 
+                                }
+                                if (input == "n")
+                                {
+                                    mistake = false;
+                                    break; 
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Invalid input. Try again!");
+                                }
+                            } while (true);
 
                             Console.WriteLine("Enter packet size(1-1465 bytes): ");
                             do
                             {
-                                packet_size = ushort.Parse(Console.ReadLine());
-                                if (packet_size > 1465 || packet_size < 1)
+                               input = Console.ReadLine();
+                                if (ushort.TryParse(input, out packet_size) && packet_size >= 1 && packet_size <= 1465)
                                 {
-                                    Console.WriteLine("Invalid packet size. Enter again:");
+                                    break; // Valid input, exit the loop
                                 }
-                            } while (packet_size > 1465 || packet_size < 1);
+                                Console.WriteLine("Invalid packet size. Enter again:");
+                            } while (true);
 
                             string filePath = "/Users/macbook/Desktop/Umela_inteligencia_1.pdf";
                             client.SendFile(destination_ip, source_sending_port, destination_listening_port, filePath,
                                 packet_size, mistake, udpClient);
-                            StopHeartBeatTimer();
                         }
+                        
                     }
                 }
             }
 
-            Console.WriteLine("Exited program");
         }
 
 
@@ -262,7 +282,7 @@ namespace Computer1
 
                 if (iniciator)
                 {
-                    ResetHeartBeatTimer(); //TODO: Turned of for testing purposes
+                    ResetHeartBeatTimer();
                 }
             }
         }
@@ -271,8 +291,11 @@ namespace Computer1
         {
             if (heartBeat_count > 3)
             {
-                Console.WriteLine("Connection lost");
+                Console.WriteLine("Connection lost!");
+                Console.WriteLine("Press ENTER to exit...");
                 isRunning = false;
+                sendThread.Join();
+                receiveThread.Join();
                 return;
             }
 

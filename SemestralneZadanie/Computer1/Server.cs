@@ -25,6 +25,7 @@ public class UDP_server
     public string formattedCrcResult;
     public string formattedHeaderChecksum;
     private DateTime startTime;
+    public uint lastSequenceNumber;
 
 
     public UDP_server(Client client)
@@ -54,7 +55,7 @@ public class UDP_server
                 {
                     Program.isRunning = false;
                     Console.WriteLine("Waiting too long for some message. Connection lost");
-                    Console.WriteLine("Press ENTER to exit...");
+                    Console.WriteLine("(You can press ENTER to exit...)");
                 }
             }
         }
@@ -165,6 +166,7 @@ public class UDP_server
         switch (msg_flag)
         {
             case 0b0100:
+                
                 messageBytes = new byte[buffer.Length - Header.HeaderData.header_size];
                 Buffer.BlockCopy(buffer, Header.HeaderData.header_size, messageBytes, 0, messageBytes.Length);
                 crc_result = checksum_counter(messageBytes, 0);
@@ -174,18 +176,23 @@ public class UDP_server
                 Console.Write(
                     $"\nRecived text message \"{Encoding.UTF8.GetString(messageBytes, 0, messageBytes.Length)}\" with sequence number {header.sequenceNumber}");
 
-
+                
                 if (formattedCrcResult == formattedHeaderChecksum)
                 {
                     ACK_message();
-                    message_bytes.Add(messageBytes);
                     Console.WriteLine("\nCORRECT information. Sending ACK");
+                    if (header.sequenceNumber != lastSequenceNumber)
+                    {
+                        message_bytes.Add(messageBytes);
+                        lastSequenceNumber = header.sequenceNumber;
+                    }
                 }
                 else
                 {
                     Console.WriteLine("\nINCORRECT information. Sending NACK");
                     send_NACK();
                 }
+                
 
                 break;
             case 0b1111:
@@ -204,6 +211,11 @@ public class UDP_server
                 {
                     Console.WriteLine("\nCORRECT information. Sending ACK");
                     ACK_message();
+                    if (header.sequenceNumber != lastSequenceNumber)
+                    {
+                        message_bytes.Add(messageBytes);
+                        lastSequenceNumber = header.sequenceNumber;
+                    }
                 }
                 else
                 {
@@ -230,7 +242,7 @@ public class UDP_server
                 Console.WriteLine("Choose an operation(m,f,q)");
                 
                 message_bytes.Clear();
-                
+                lastSequenceNumber = 0;
                 break;
             default:
                 Console.WriteLine("Neznamy typ spravy");
@@ -258,6 +270,12 @@ public class UDP_server
                 if (formattedCrcResult == formattedHeaderChecksum)
                 {
                     ACK_message();
+                    //Console.WriteLine("\nCORRECT information. Sending ACK");
+                    if (header.sequenceNumber != lastSequenceNumber)
+                    {
+                        message_bytes.Add(messageBytes);
+                        lastSequenceNumber = header.sequenceNumber;
+                    }
                 }
                 else
                 {
@@ -290,7 +308,11 @@ public class UDP_server
                 {
                     Console.WriteLine($"Checksum is EQUAL. Sending ACK for packet {header.sequenceNumber}");
                     ACK_message();
-                    file_bytes.Add(fileBytes);
+                    if (header.sequenceNumber != lastSequenceNumber)
+                    {
+                        file_bytes.Add(fileBytes);
+                        lastSequenceNumber = header.sequenceNumber;
+                    }
                 }
                 else
                 {
@@ -305,8 +327,7 @@ public class UDP_server
                 count++; // Increment the fragment count
                 break;
 
-            case 0b1111
-                : //###################################################################################LAST FRAGMENT
+            case 0b1111: //###################################################################################LAST FRAGMENT
                 header = extract_header(buffer);
                 fileBytes = new byte[buffer.Length - Header.HeaderData.header_size];
                 Buffer.BlockCopy(buffer, Header.HeaderData.header_size, fileBytes, 0, fileBytes.Length);
@@ -320,7 +341,11 @@ public class UDP_server
                 {
                     Console.WriteLine($"Checksum is EQUAL. Sending ACK for packet {header.sequenceNumber}");
                     ACK_message();
-                    file_bytes.Add(fileBytes);
+                    if (header.sequenceNumber != lastSequenceNumber)
+                    {
+                        file_bytes.Add(fileBytes);
+                        lastSequenceNumber = header.sequenceNumber;
+                    }
                 }
                 else
                 {
@@ -366,6 +391,7 @@ public class UDP_server
 
                 Program.is_sending = false;
                 file_bytes.Clear();
+                lastSequenceNumber = 0;
                 break;
             default:
                 Console.WriteLine("Neznamy typ pre subor");

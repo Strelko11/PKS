@@ -31,6 +31,7 @@ namespace Computer1
         {
             byte[] messageBytes = Encoding.UTF8.GetBytes(msg);
             Program.is_sending = true;
+            Program.StopHeartBeatTimer();
 
             IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Parse(destination_IP), destination_Port);
             Console.WriteLine($"Message beginning to send at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}");
@@ -117,7 +118,7 @@ namespace Computer1
                     Program.NACK = false;
                     Program.KEEP_ALIVE_ACK = false;
                     int currentChunkSize = Math.Min(packet_size, messageBytes.Length - (i * packet_size));
-                    chunk = new byte[packet_size + Header.HeaderData.header_size];
+                    chunk = new byte[currentChunkSize + Header.HeaderData.header_size];
 
 
                     // Copy the file data into the chunk, starting from byte 6 (skipping the header)
@@ -216,12 +217,14 @@ namespace Computer1
             }
 
             Program.is_sending = false;
+            Program.StartHeartBeatTimer();
         }
 
         public void SendFile(string destination_IP, int source_Port, int destination_Port, string filePath,
             ushort packet_size, bool mistake, UdpClient udpClient)
         {
             Program.is_sending = true;
+            Program.StopHeartBeatTimer();
 
             Console.WriteLine($"File sent at: {DateTime.UtcNow.ToString("HH:mm:ss.fff")}");
 
@@ -326,12 +329,10 @@ namespace Computer1
 
                     Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
 
-                    // Send the chunk as a UDP packet
                     udpClient.Send(chunk, chunk.Length, remoteEndPoint);
 
                     Console.WriteLine($"\nSent chunk {i + 1}/{total_packets} with payload size {currentChunkSize}");
                     startTime = DateTime.Now;
-                    DateTime lastKeepAliveTime = DateTime.Now; // Add this at the beginning of your method
 
                     while (!Program.ACK)
                     {
@@ -399,6 +400,7 @@ namespace Computer1
             }
 
             Program.is_sending = false;
+            Program.StartHeartBeatTimer();
         }
 
         public void SendServiceMessage(string destination_IP, int source_Port, int destination_Port, byte[] headerBytes,
@@ -431,7 +433,6 @@ namespace Computer1
             byte[] dataToSend = new byte[headerBytes.Length];
             Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
             udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
-            Console.WriteLine($"Sent keep_alive message to maintain connection. {Program.heartBeat_count}");
             Program.KEEP_ALIVE_ACK = false;
         }
     }
