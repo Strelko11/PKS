@@ -255,7 +255,7 @@ public class UDP_server
         switch (msg_flag)
         {
             case 0b1011
-                : //####################################################################FILE NAME //TODO: Osetrit chybu ale nevytvarat
+                : //####################################################################FILE NAME
                 Program.is_sending = true;
                 file_name = Encoding.UTF8.GetString(buffer, Header.HeaderData.header_size,
                     buffer.Length - Header.HeaderData.header_size);
@@ -270,12 +270,12 @@ public class UDP_server
                 if (formattedCrcResult == formattedHeaderChecksum)
                 {
                     ACK_message();
-                    //Console.WriteLine("\nCORRECT information. Sending ACK");
                     if (header.sequenceNumber != lastSequenceNumber)
                     {
                         message_bytes.Add(messageBytes);
                         lastSequenceNumber = header.sequenceNumber;
                     }
+                    
                 }
                 else
                 {
@@ -313,6 +313,10 @@ public class UDP_server
                         file_bytes.Add(fileBytes);
                         lastSequenceNumber = header.sequenceNumber;
                     }
+                    else
+                    {
+                        Console.WriteLine("Fragment was SKIPPED");
+                    }
                 }
                 else
                 {
@@ -324,7 +328,7 @@ public class UDP_server
 
                 
 
-                count++; // Increment the fragment count
+                count++; 
                 break;
 
             case 0b1111: //###################################################################################LAST FRAGMENT
@@ -372,7 +376,6 @@ public class UDP_server
                 FileInfo fileInfo = new FileInfo(file_path);
 
 
-                // Get the file size in bytes
                 long fileSizeInBytes = fileInfo.Length;
                 Console.WriteLine("All fragments received. Final file information:");
                 Console.WriteLine($"File Size: {fileSizeInBytes} bytes");
@@ -380,7 +383,6 @@ public class UDP_server
                 var receiveTime = DateTime.UtcNow;
                 Console.WriteLine($"File received at: {receiveTime.ToString("HH:mm:ss.fff")}");
 
-                // Optionally, you can calculate the final CRC of the entire file
                 Console.Write($"Final CRC16 of the entire file {file_path}: ");
                 fileBytes = File.ReadAllBytes(file_path);
                 crc_result = checksum_counter(fileBytes, 0);

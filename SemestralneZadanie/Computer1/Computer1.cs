@@ -98,13 +98,7 @@ namespace Computer1
             if(input == "y"){
                  iniciator = true;
             }
-
-            /*Console.WriteLine("Is this device an initiator(y/n):");
-            var respone = Console.ReadLine();
-            if (respone == "y")
-            {
-                iniciator = true;
-            }*/
+            
 
             Console.WriteLine("\n\n\n\n********************************************************************");
             Console.WriteLine("After both devices have been set up:");
@@ -151,10 +145,10 @@ namespace Computer1
                         headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.SYN, 1, 0);
                         client.SendServiceMessage(destination_ip, source_sending_port, destination_listening_port,
                             headerBytes, udpClient);
-                        lastSentTime = DateTime.Now; // Update the last sent time
+                        lastSentTime = DateTime.Now; 
                     }
 
-                    Thread.Sleep(1); // Prevent tight looping
+                    Thread.Sleep(1); 
                 }
 
                 headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK, 1, 0);
@@ -216,10 +210,9 @@ namespace Computer1
                             do
                             {
                                 input = Console.ReadLine();
-                                //packet_size = Console.ReadLine();
                                 if (ushort.TryParse(input, out packet_size) && packet_size >= 1 && packet_size <= 1465)
                                 {
-                                    break; // Valid input, exit the loop
+                                    break; 
                                 }
                                 Console.WriteLine("Invalid packet size. Enter again:");
                             } while (true);
@@ -258,7 +251,7 @@ namespace Computer1
                                input = Console.ReadLine();
                                 if (ushort.TryParse(input, out packet_size) && packet_size >= 1 && packet_size <= 1465)
                                 {
-                                    break; // Valid input, exit the loop
+                                    break; 
                                 }
                                 Console.WriteLine("Invalid packet size. Enter again:");
                             } while (true);
@@ -278,8 +271,8 @@ namespace Computer1
                                     Console.WriteLine("File not found. Please try again.");
                                 }
                             } while (true);
-                            //string filePath = "/Users/macbook/Desktop/Umela_inteligencia_1.pdf"; // TODO: Prerobit nech si uzivatel vyberie
-                            client.SendFile(destination_ip, source_sending_port, destination_listening_port, filePath,
+                            //string filePath = "/Users/macbook/Desktop/Umela_inteligencia_1.pdf"; 
+                            client.SendFile(destination_ip, destination_listening_port, filePath,
                                 packet_size, mistake, udpClient);
                         }
                         

@@ -79,7 +79,7 @@ namespace Computer1
                             keep_alive(udpClient, startTime, remoteEndPoint);
                             Program.keep_alive_sent = true;
                             Program.heartBeat_count++;
-                            startTime = DateTime.Now; // Reset the timeout timer
+                            startTime = DateTime.Now; 
                         }
                     }
 
@@ -121,7 +121,6 @@ namespace Computer1
                     chunk = new byte[currentChunkSize + Header.HeaderData.header_size];
 
 
-                    // Copy the file data into the chunk, starting from byte 6 (skipping the header)
                     Array.Copy(messageBytes, i * packet_size, chunk, Header.HeaderData.header_size, currentChunkSize);
                     crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
 
@@ -152,7 +151,6 @@ namespace Computer1
 
                     Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
 
-                    // Send the chunk as a UDP packet
                     udpClient.Send(chunk, chunk.Length, remoteEndPoint);
 
                     byte[] sentMessage = new byte[chunk.Length - Header.HeaderData.header_size];
@@ -181,7 +179,7 @@ namespace Computer1
                                 keep_alive(udpClient, startTime, remoteEndPoint);
                                 Program.keep_alive_sent = true;
                                 Program.heartBeat_count++;
-                                startTime = DateTime.Now; // Reset the timeout timer
+                                startTime = DateTime.Now; 
                             }
                         }
 
@@ -220,7 +218,7 @@ namespace Computer1
             Program.StartHeartBeatTimer();
         }
 
-        public void SendFile(string destination_IP, int source_Port, int destination_Port, string filePath,
+        public void SendFile(string destination_IP, int destination_Port, string filePath,
             ushort packet_size, bool mistake, UdpClient udpClient)
         {
             Program.is_sending = true;
@@ -244,7 +242,6 @@ namespace Computer1
             Buffer.BlockCopy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
             Buffer.BlockCopy(file_name, 0, dataToSend, Header.HeaderData.header_size, file_name.Length);
             udpClient.Send(dataToSend, dataToSend.Length, remoteEndPoint);
-            byte[] lastSentPacket = null; // To store the last sent packet before disconnection
             startTime = DateTime.Now;
 
             while (!Program.ACK)
@@ -266,7 +263,7 @@ namespace Computer1
                         keep_alive(udpClient, startTime, remoteEndPoint);
                         Program.keep_alive_sent = true;
                         Program.heartBeat_count++;
-                        startTime = DateTime.Now; // Reset the timeout timer
+                        startTime = DateTime.Now; 
                     }
                 }
 
@@ -353,7 +350,7 @@ namespace Computer1
                                 keep_alive(udpClient, startTime, remoteEndPoint);
                                 Program.keep_alive_sent = true;
                                 Program.heartBeat_count++;
-                                startTime = DateTime.Now; // Reset the timeout timer
+                                startTime = DateTime.Now; 
                             }
                         }
 
