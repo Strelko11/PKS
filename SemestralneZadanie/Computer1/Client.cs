@@ -64,7 +64,7 @@ namespace Computer1
                 {
                     //Thread.Sleep(3000); //TODO: Odkomentovat ak bude treba testovat rychlost pripojenia
 
-                    if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
+                    if ((DateTime.Now - startTime).TotalMilliseconds > 5000 && Program.iniciator)
                     {
                         if (Program.heartBeat_count > 3)
                         {
@@ -90,7 +90,7 @@ namespace Computer1
                         Console.WriteLine($"RESENT PACKET with seguence number {1} and payload size {packet_size}"); 
 
                         crc_result = checksum_counter(dataToSend, Header.HeaderData.header_size);
-                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA, 1,
+                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.LAST_FRAGMENT, 1,
                             Convert.ToUInt16(crc_result, 16));
 
                         Array.Copy(headerBytes, 0, dataToSend, 0, headerBytes.Length);
@@ -190,8 +190,17 @@ namespace Computer1
                             Console.WriteLine($"RESENT PACKET with seguence number {i + 1} and payload size {currentChunkSize}"); 
 
                             crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
-                            headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA, i + 1,
-                                Convert.ToUInt16(crc_result, 16));
+                            if (total_packets == 1 || i == total_packets - 1)
+                            {
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.LAST_FRAGMENT, i + 1,
+                                    Convert.ToUInt16(crc_result, 16));
+                            }
+                            else
+                            {
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_TEXT, Header.HeaderData.DATA, i + 1,
+                                    Convert.ToUInt16(crc_result, 16));
+                            }
+                            
 
                             Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
                             udpClient.Send(chunk, chunk.Length, remoteEndPoint);
@@ -299,7 +308,7 @@ namespace Computer1
                     Array.Copy(fileBytes, i * packet_size, chunk, Header.HeaderData.header_size, currentChunkSize);
                     crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
 
-                    if (total_packets == 1 || i == total_packets - 1)
+                    if (total_packets == 1)
                     {
                         if (mistake)
                         {
@@ -308,6 +317,11 @@ namespace Computer1
                             crc_result = crcValue.ToString("X");
                         }
 
+                        headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE, Header.HeaderData.LAST_FRAGMENT,
+                            i + 1, Convert.ToUInt16(crc_result, 16));
+                    }
+                    else if (i == total_packets - 1)
+                    {
                         headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE, Header.HeaderData.LAST_FRAGMENT,
                             i + 1, Convert.ToUInt16(crc_result, 16));
                     }
@@ -361,8 +375,17 @@ namespace Computer1
                             Console.WriteLine($"RESENT PACKET with seguence number {i + 1} and payload size {currentChunkSize}"); 
 
                             crc_result = checksum_counter(chunk, Header.HeaderData.header_size);
-                            headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE, Header.HeaderData.DATA, i + 1,
-                                Convert.ToUInt16(crc_result, 16));
+                            if (total_packets == 1 || i == total_packets - 1)
+                            {
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE, Header.HeaderData.LAST_FRAGMENT, i + 1,
+                                    Convert.ToUInt16(crc_result, 16));
+                            }
+                            else
+                            {
+                                headerBytes = header.ToByteArray(Header.HeaderData.MSG_FILE, Header.HeaderData.DATA, i + 1,
+                                    Convert.ToUInt16(crc_result, 16));
+                            }
+                            
 
                             Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
                             udpClient.Send(chunk, chunk.Length, remoteEndPoint);

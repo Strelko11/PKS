@@ -87,10 +87,7 @@ namespace Computer1
             isRunning = true;
             udpClient = new UdpClient(source_sending_port);
 
-            receiveThread = new Thread(() => receive_thread(source_listening_port));
-            receiveThread.Start();
-            sendThread = new Thread(() => send_thread(destination_ip, destination_listening_port));
-            sendThread.Start();
+            
 
 
             Console.WriteLine("Do you want to initiate the handshake? (y/n)");
@@ -99,6 +96,10 @@ namespace Computer1
                  iniciator = true;
             }
             
+            receiveThread = new Thread(() => receive_thread(source_listening_port));
+            receiveThread.Start();
+            sendThread = new Thread(() => send_thread(destination_ip, destination_listening_port));
+            sendThread.Start();
 
             Console.WriteLine("\n\n\n\n********************************************************************");
             Console.WriteLine("After both devices have been set up:");
@@ -249,7 +250,7 @@ namespace Computer1
                             do
                             {
                                input = Console.ReadLine();
-                                if (ushort.TryParse(input, out packet_size) && packet_size >= 1 && packet_size <= 1465)
+                                if (ushort.TryParse(input, out packet_size) && packet_size >= 1 && packet_size <= 1466)
                                 {
                                     break; 
                                 }
@@ -303,8 +304,7 @@ namespace Computer1
                 Console.WriteLine("Connection lost!");
                 Console.WriteLine("Press ENTER to exit...");
                 isRunning = false;
-                sendThread.Join();
-                receiveThread.Join();
+                StopHeartBeatTimer();
                 return;
             }
 

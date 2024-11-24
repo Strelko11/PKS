@@ -51,7 +51,7 @@ public class UDP_server
                     ProcessMessageFlag(type_flag, msg_flag, buffer);
                     startTime = DateTime.Now;
                 }
-                else if ((DateTime.Now - startTime).TotalMilliseconds >= 15000 && !Program.iniciator)
+                else if ((DateTime.Now - startTime).TotalMilliseconds >= 15500 && !Program.iniciator)
                 {
                     Program.isRunning = false;
                     Console.WriteLine("Waiting too long for some message. Connection lost");
@@ -152,6 +152,7 @@ public class UDP_server
                 Console.WriteLine("Connection closed");
                 Console.WriteLine("Press ENTER to exit...");
                 Program.isRunning = false;
+                Program.StopHeartBeatTimer();
                 break;
             
             case 0b1000:
