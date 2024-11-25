@@ -1,4 +1,7 @@
-﻿using System.Net.Sockets;
+﻿using System;
+using System.IO;
+using System.Net.Sockets;
+using System.Threading;
 using System.Timers;
 
 
@@ -36,7 +39,7 @@ namespace Computer1
         public static Thread sendThread;
         public static bool FIN_received = false;
         public static bool FIN_sent = false;
-        public static bool FIN_ACK = false;
+        //public static bool FIN_ACK = false;
         public static bool is_sending = false;
         public static string input;
         static DateTime lastSentTime = DateTime.MinValue;

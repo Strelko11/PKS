@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
 namespace Computer1;
 
 using System.Net;
@@ -117,8 +122,9 @@ public class UDP_server
                         Program.heartBeat_count = 1;
                     }
                 }
-                else if (Program.FIN_ACK && (Program.FIN_received || Program.FIN_sent))
+                else if (Program.FIN_received && Program.FIN_sent)
                 {
+                    ACK_message();
                     Program.isRunning = false;
                     Console.WriteLine("Connection closed");
                     Console.WriteLine("Press ENTER to exit...");
@@ -139,21 +145,22 @@ public class UDP_server
             case 0b0101:
                 Console.WriteLine("Received FIN");
                 Program.FIN_received = true;
-                if (!Program.is_sending)
+                if (!Program.is_sending && !Program.FIN_sent)
                 {
-                    send_FIN_ACK();
-                    Program.FIN_ACK = true;
+                    send_FIN();
+                    ACK_message();
+                    //Program.FIN_sent = true;
                 }
                 break;
             
-            case 0b0110:
+            /*case 0b0110:
                 Console.WriteLine("Received FIN_ACK");
                 ACK_message();
                 Console.WriteLine("Connection closed");
                 Console.WriteLine("Press ENTER to exit...");
                 Program.isRunning = false;
                 Program.StopHeartBeatTimer();
-                break;
+                break;*/
             
             case 0b1000:
                 ACK_message();
@@ -459,12 +466,12 @@ public class UDP_server
             Program.destination_listening_port, headerBytes, Program.udpClient);
     }
 
-    public void send_FIN_ACK()
+    public void send_FIN()
     {
         Header.HeaderData responseHeader = new Header.HeaderData();
-        byte[] headerBytes = responseHeader.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN_ACK, 1, 0);
+        byte[] headerBytes = responseHeader.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN, 1, 0);
         client.SendServiceMessage(Program.destination_ip, Program.source_sending_port,
             Program.destination_listening_port, headerBytes, Program.udpClient);
-        Program.FIN_ACK = true;
+        Program.FIN_sent = true;
     }
 }

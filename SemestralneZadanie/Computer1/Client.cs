@@ -1,7 +1,10 @@
 
+using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using InvertedTomato.Crc;
 
 namespace Computer1
@@ -101,9 +104,11 @@ namespace Computer1
 
                 if (Program.FIN_received)
                 {
-                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN_ACK, 1, 0);
+                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN, 1, 0);
                     udpClient.Send(headerBytes, headerBytes.Length, remoteEndPoint);
-                    Program.FIN_ACK = true;
+                    headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK, 1, 0);
+                    udpClient.Send(headerBytes, headerBytes.Length, remoteEndPoint);
+                    Program.FIN_sent = true;
                 }
             }
 
@@ -218,9 +223,11 @@ namespace Computer1
 
             if (Program.FIN_received)
             {
-                headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN_ACK, 1, 0);
+                headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN, 1, 0);
                 udpClient.Send(headerBytes, headerBytes.Length, remoteEndPoint);
-                Program.FIN_ACK = true;
+                headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK, 1, 0);
+                udpClient.Send(headerBytes, headerBytes.Length, remoteEndPoint);
+                Program.FIN_sent = true;
             }
 
             Program.is_sending = false;
@@ -414,9 +421,11 @@ namespace Computer1
 
             if (Program.FIN_received)
             {
-                headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN_ACK, 1, 0);
+                headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.FIN, 1, 0);
                 udpClient.Send(headerBytes, headerBytes.Length, remoteEndPoint);
-                Program.FIN_ACK = true;
+                headerBytes = header.ToByteArray(Header.HeaderData.MSG_NONE, Header.HeaderData.ACK, 1, 0);
+                udpClient.Send(headerBytes, headerBytes.Length, remoteEndPoint);
+                Program.FIN_sent = true;
             }
 
             Program.is_sending = false;
