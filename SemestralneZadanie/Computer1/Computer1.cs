@@ -49,7 +49,7 @@ namespace Computer1
 
         static int Main(string[] args)
         {
-            Console.WriteLine("Enter source IP address:");
+            /*Console.WriteLine("Enter source IP address:");
             source_ip = Console.ReadLine();
 
             Console.WriteLine("Enter destination IP address:");
@@ -70,10 +70,10 @@ namespace Computer1
 
             Console.WriteLine("Enter source sending port:");
             input = Console.ReadLine();
-            source_sending_port = int.Parse(input);
+            source_sending_port = int.Parse(input);*/
 
 
-            /*if (args.Length < 5)
+            if (args.Length < 5)
             {
                 Console.WriteLine(
                     "Usage: <destination_ip> <destination_listening_port> <destination_sending_port> <source_listening_port> <source_sending_port>");
@@ -85,19 +85,22 @@ namespace Computer1
             destination_sending_port = int.Parse(args[2]);
             source_listening_port = int.Parse(args[3]);
             source_sending_port = int.Parse(args[4]);
-            string respone = args[5];*/
+            string respone = args[5];
 
             isRunning = true;
             udpClient = new UdpClient(source_sending_port);
 
-            
 
+            if (respone == "y")
+            {
+                iniciator = true;
+            }
 
-            Console.WriteLine("Do you want to initiate the handshake? (y/n)");
+            /*Console.WriteLine("Do you want to initiate the handshake? (y/n)");
             input = Console.ReadLine();
             if(input == "y"){
                  iniciator = true;
-            }
+            }*/
             
             receiveThread = new Thread(() => receive_thread(source_listening_port));
             receiveThread.Start();
